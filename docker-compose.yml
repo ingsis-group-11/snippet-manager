@@ -1,17 +1,30 @@
 version: '3.8'
 
 services:
+  api:
+    container_name: "snippet-manager-api"
+    build:
+      context: .
+      dockerfile: Dockerfile.multi
+    ports:
+      - 8000:8080
+    environment: # Poner estas variables en un archivo .env
+      DB_USER: sa
+      DB_PASSWORD: password
+      DB_NAME: compose-db
+      DB_HOST: postgres_db
+      DB_PORT: 5432
   db:
     container_name: snippet-manager-db
     image: postgres:latest
     ports:
       - "5432:5432"
-    environment:
+    environment: # Poner estas variables en un archivo .env
       POSTGRES_USER: sa
       POSTGRES_PASSWORD: password
       POSTGRES_DB: snippet-manager-db
     volumes:
-      - ./data:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql/data
 
   pgadmin:
     image: dpage/pgadmin4
@@ -22,3 +35,7 @@ services:
       - "80:80"
     depends_on:
       - db
+
+volumes:
+  pgdata:
+    external: false
