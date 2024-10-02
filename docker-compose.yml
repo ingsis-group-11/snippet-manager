@@ -7,7 +7,7 @@ services:
       context: .
       dockerfile: Dockerfile.multi
     ports:
-      - 8000:8080
+      - "8000:8080"
     environment: # Poner estas variables en un archivo .env
       DB_USER: sa
       DB_PASSWORD: password
