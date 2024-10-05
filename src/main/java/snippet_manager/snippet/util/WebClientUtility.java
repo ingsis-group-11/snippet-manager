@@ -1,5 +1,6 @@
 package snippet_manager.snippet.util;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
@@ -13,11 +14,11 @@ public class WebClientUtility {
     this.webClient = webClientBuilder.build();
   }
 
-  public String get(String url) {
+  public <T> T get(String url,  Class<T> responseType) {
     return webClient.get()
             .uri(url)
             .retrieve()
-            .bodyToMono(String.class)
+            .bodyToMono(responseType)
             .block();
   }
 
@@ -30,18 +31,18 @@ public class WebClientUtility {
             .block();
   }
 
-  public Mono<String> getAsync(String url) {
+  public <T> Mono<T> getAsync(String url, Class<T> responseType) {
     return webClient.get()
             .uri(url)
             .retrieve()
-            .bodyToMono(String.class);
+            .bodyToMono(responseType);
   }
 
-  public <T, R> Mono<R> postAsync(String url, T requestBody, Class<R> responseType) {
+  public <T, R> Mono<ResponseEntity<R>> postAsync(String url, T body, Class<R> responseType) {
     return webClient.post()
             .uri(url)
-            .bodyValue(requestBody)
+            .bodyValue(body)
             .retrieve()
-            .bodyToMono(responseType);
+            .toEntity(responseType);
   }
 }
