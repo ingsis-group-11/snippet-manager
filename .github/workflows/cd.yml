@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - dev
 
 jobs:
   build-and-push:
@@ -21,7 +22,7 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
-        # Paso 3: Configurar Gradle Cache
+      # Paso 3: Configurar Gradle Cache
       - name: Cache Gradle packages
         uses: actions/cache@v3
         with:
@@ -44,12 +45,24 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.DOCKER_TOKEN }}
 
-      # Paso 6: Construir la imagen Docker
+      # Paso 6: Establecer la etiqueta de la imagen según la rama
+      - name: Set Docker Image Tag
+        id: get-tag
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            echo "TAG=latest" >> $GITHUB_ENV
+          elif [[ "${{ github.ref }}" == "refs/heads/dev" ]]; then
+            echo "TAG=dev" >> $GITHUB_ENV
+          else
+            echo "TAG=other" >> $GITHUB_ENV
+          fi
+
+      # Paso 7: Construir la imagen Docker con la etiqueta correspondiente
       - name: Build Docker Image
         run: |
-          docker build -t ghcr.io/${{ github.repository }}:latest .
+          docker build -t ghcr.io/${{ github.repository }}:${{ env.TAG }} .
 
-      # Paso 7: Push de la imagen Docker a GHCR
+      # Paso 8: Push de la imagen Docker a GHCR
       - name: Push Docker Image
         run: |
-          docker push ghcr.io/${{ github.repository }}:latest
+          docker push ghcr.io/${{ github.repository }}:${{ env.TAG }}
