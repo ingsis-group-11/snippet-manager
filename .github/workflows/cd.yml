@@ -57,7 +57,7 @@ jobs:
             echo "TAG=other" >> $GITHUB_ENV
           fi
 
-      # Paso 7: Construir la imagen Docker con la etiqueta correspondiente
+      # Paso 7: Construir la imagen Docker
       - name: Build Docker image
         run: |
           docker build -t ghcr.io/${{ github.repository_owner }}/permission-manager:${{ env.TAG }} .
