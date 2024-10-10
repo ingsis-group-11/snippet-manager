@@ -12,11 +12,11 @@ jobs:
 
     steps:
       # Paso 1: Checkout del código
-      - name: Checkout Code
+      - name: Checkout code
         uses: actions/checkout@v3
 
       # Paso 2: Configurar JDK
-      - name: Config JDK 21
+      - name: Configure JDK 21
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
@@ -34,11 +34,11 @@ jobs:
             ${{ runner.os }}-gradle-
 
       # Paso 4: Construir el proyecto con Gradle
-      - name: Build Gradle
+      - name: Gradle Build
         run: gradle assemble --no-daemon
 
       # Paso 5: Iniciar sesión en GitHub Container Registry
-      - name: Login GHCR
+      - name: Login to GHCR
         uses: docker/login-action@v2
         with:
           registry: ghcr.io
@@ -49,20 +49,20 @@ jobs:
       - name: Set Docker Image Tag
         id: get-tag
         run: |
-          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+          if [ "${{ github.ref }}" == "refs/heads/main" ]; then
             echo "TAG=latest" >> $GITHUB_ENV
-          elif [[ "${{ github.ref }}" == "refs/heads/dev" ]]; then
+          elif [ "${{ github.ref }}" == "refs/heads/dev" ]; then
             echo "TAG=dev" >> $GITHUB_ENV
           else
             echo "TAG=other" >> $GITHUB_ENV
           fi
 
       # Paso 7: Construir la imagen Docker con la etiqueta correspondiente
-      - name: Build Docker Image
+      - name: Build Docker image
         run: |
-          docker build -t ghcr.io/${{ github.repository }}:${{ env.TAG }} .
+          docker build -t ghcr.io/${{ github.repository_owner }}/permission-manager:${{ env.TAG }} .
 
       # Paso 8: Push de la imagen Docker a GHCR
-      - name: Push Docker Image
+      - name: Push Docker image
         run: |
-          docker push ghcr.io/${{ github.repository }}:${{ env.TAG }}
+          docker push ghcr.io/${{ github.repository_owner }}/permission-manager:${{ env.TAG }}
