@@ -3,9 +3,9 @@ spring:
     name: back
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:5432/snippet-manager-db
-    username: sa
-    password: password
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/snippet-manager-db}
+    username: ${SPRING_DATASOURCE_USERNAME:admin}
+    password: ${SPRING_DATASOURCE_PASSWORD:admin}
   jpa:
     hibernate:
       ddl-auto: create
