@@ -20,4 +20,4 @@ auth0:
   audience: ${AUTH0_AUDIENCE}
 
 server:
-  port: 8081
+  port: 8080
