@@ -20,4 +20,4 @@ auth0:
   audience: ${AUTH0_AUDIENCE}
 
 server:
-  port: 8080
+  port: ${DOCKER_PORT:8000}

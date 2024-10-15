@@ -18,6 +18,7 @@ public class PermissionManager {
   private final int timeOutInSeconds = 30;
 
   public boolean canAccess(Long userId, Long snippetId) {
+    System.out.println("Checking permission for user " + userId + " and snippet " + snippetId);
     PermissionDTO permissionDTO = PermissionDTO.builder()
             .snippetId(snippetId)
             .userId(userId)

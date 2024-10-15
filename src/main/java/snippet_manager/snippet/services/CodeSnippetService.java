@@ -48,9 +48,11 @@ public class CodeSnippetService {
   }
 
   public List<CodeSnippetDTO> getAllSnippets(Long userId) {
+    System.out.println("Getting all snippets for user " + userId);
     List<CodeSnippet> codeSnippets = codeSnippetRepository.findAll();
+    boolean canAccess = new PermissionManager().canAccess(userId, 2L);
     for (CodeSnippet codeSnippet : codeSnippets) {
-      boolean canAccess = new PermissionManager().canAccess(userId, codeSnippet.getId());
+
       if (!canAccess) {
         codeSnippets.remove(codeSnippet);
       }
