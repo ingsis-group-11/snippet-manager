@@ -24,7 +24,7 @@ public class PermissionManager {
             .build();
 
     Mono<ResponseEntity<Boolean>> response = webClientUtility.postAsync(
-            "http://localhost:8081/api/permission/",
+            "http://localhost:8003/api/permission/",
             permissionDTO,
             Boolean.class
     );
@@ -44,7 +44,7 @@ public class PermissionManager {
             .snippetId(snippetId)
             .userId(userId)
             .build();
-    Mono<ResponseEntity<String>> response = webClientUtility.postAsync("http://localhost:8081/api/permission/new-permision", permissionDTO, String.class);
+    Mono<ResponseEntity<String>> response = webClientUtility.postAsync("http://localhost:8003/api/permission/new-permision", permissionDTO, String.class);
     return response.block(Duration.ofSeconds(timeOutInSeconds));
   }
 }
