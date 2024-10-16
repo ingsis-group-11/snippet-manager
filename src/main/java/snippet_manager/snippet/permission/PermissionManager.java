@@ -7,9 +7,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 import snippet_manager.snippet.model.dtos.PermissionDTO;
+import snippet_manager.snippet.util.PermissionType;
 import snippet_manager.snippet.util.WebClientUtility;
 
 import java.time.Duration;
+import java.util.UUID;
 
 @Component
 public class PermissionManager {
@@ -20,17 +22,51 @@ public class PermissionManager {
   @Value("${permission.manager.url}")
   private String permissionManagerUrl;
 
-  public boolean canAccess(Long userId, Long snippetId) {
-    System.out.println("Checking permission for user " + userId + " and snippet " + snippetId);
-    PermissionDTO permissionDTO = PermissionDTO.builder()
-            .snippetId(snippetId)
+  public boolean canRead(Long userId, UUID snippetId) {
+    PermissionDTO body = PermissionDTO.builder()
+            .snippetId(snippetId.toString())
             .userId(userId)
+            .permission(PermissionType.READ)
             .build();
 
+    return fetchPermissionData(body);
+  }
+
+  public boolean canWrite(Long userId, UUID snippetId) {
+    PermissionDTO body = PermissionDTO.builder()
+            .snippetId(snippetId.toString())
+            .userId(userId)
+            .permission(PermissionType.READ_WRITE)
+            .build();
+
+    return fetchPermissionData(body);
+  }
+
+  public ResponseEntity<String> createNewPermission(Long userId, UUID snippetId){
+    PermissionDTO permissionDTO = PermissionDTO.builder()
+            .snippetId(snippetId.toString())
+            .userId(userId)
+            .build();
+    String url = permissionManagerUrl + "/api/permission/new-permision";
+    Mono<ResponseEntity<String>> response = webClientUtility.postAsync(url, permissionDTO, String.class);
+    return response.block(Duration.ofSeconds(timeOutInSeconds));
+  }
+
+  public boolean canDelete(Long userId, UUID snippetId) {
+    PermissionDTO body = PermissionDTO.builder()
+            .snippetId(snippetId.toString())
+            .userId(userId)
+            .permission(PermissionType.DELETE)
+            .build();
+
+    return fetchPermissionData(body);
+  }
+
+  private boolean fetchPermissionData(PermissionDTO body) {
     String url = permissionManagerUrl + "/api/permission/";
     Mono<ResponseEntity<Boolean>> response = webClientUtility.postAsync(
             url,
-            permissionDTO,
+            body,
             Boolean.class
     );
 
@@ -42,15 +78,5 @@ public class PermissionManager {
     } else {
       return false;
     }
-  }
-
-  public ResponseEntity<String> newPermission(Long userId, Long snippetId){
-    PermissionDTO permissionDTO = PermissionDTO.builder()
-            .snippetId(snippetId)
-            .userId(userId)
-            .build();
-    String url = permissionManagerUrl + "/api/permission/new-permision";
-    Mono<ResponseEntity<String>> response = webClientUtility.postAsync(url, permissionDTO, String.class);
-    return response.block(Duration.ofSeconds(timeOutInSeconds));
   }
 }

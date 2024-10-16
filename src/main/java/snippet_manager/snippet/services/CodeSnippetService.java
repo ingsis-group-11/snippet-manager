@@ -12,6 +12,7 @@ import snippet_manager.snippet.permission.PermissionManager;
 import snippet_manager.snippet.repositories.CodeSnippetRepository;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -22,21 +23,22 @@ public class CodeSnippetService {
   @Autowired
   private PermissionManager permissionManager;
 
-  public String createSnippet(CodeSnippetDTO snippet) {
+  public String createSnippet(CodeSnippetDTO snippet, Long userId) {
     CodeSnippet codeSnippet = new CodeSnippet();
     codeSnippet.setTitle(snippet.getTitle());
     codeSnippet.setContent(snippet.getContentInString());
     codeSnippet.setLanguage(snippet.getLanguageInEnum());
+    codeSnippet.setVersion(snippet.getVersion());
     codeSnippetRepository.save(codeSnippet);
-    ResponseEntity<String> permissionResponse = new PermissionManager().newPermission(codeSnippet.getId(), codeSnippet.getId());
+    ResponseEntity<String> permissionResponse = createNewPermission(userId, codeSnippet);
     if (permissionResponse.getStatusCode().isError()) {
       throw new HttpServerErrorException(permissionResponse.getStatusCode());
     }
     return "Snippet created successfully";
   }
 
-  public CodeSnippetDTO getSnippet(Long snippetId, Long userId) {
-    boolean canAccess = new PermissionManager().canAccess(userId, snippetId);
+  public CodeSnippetDTO getSnippet(UUID snippetId, Long userId) {
+    boolean canAccess = canReadSnippet(userId, snippetId);
     if (!canAccess) {
       throw new PermissionDeniedDataAccessException("You don't have permission to access this snippet", new Exception("You don't have permission to access this snippet"));
     }
@@ -47,14 +49,14 @@ public class CodeSnippetService {
         .title(codeSnippet.getTitle())
         .language(codeSnippet.getLanguage().name())
         .content(codeSnippet.getContentInMultipartFile())
+        .version(codeSnippet.getVersion())
         .build();
   }
 
   public List<CodeSnippetDTO> getAllSnippets(Long userId) {
-    System.out.println("Getting all snippets for user " + userId);
     List<CodeSnippet> codeSnippets = codeSnippetRepository.findAll();
     for (CodeSnippet codeSnippet : codeSnippets) {
-      boolean canAccess = new PermissionManager().canAccess(userId, codeSnippet.getId());
+      boolean canAccess = canReadSnippet(userId, codeSnippet.getId());
       if (!canAccess) {
         codeSnippets.remove(codeSnippet);
       }
@@ -62,18 +64,8 @@ public class CodeSnippetService {
     return convertToDTO(codeSnippets);
   }
 
-  private List<CodeSnippetDTO> convertToDTO(List<CodeSnippet> codeSnippets) {
-    return codeSnippets.stream()
-        .map(codeSnippet -> CodeSnippetDTO.builder()
-            .title(codeSnippet.getTitle())
-            .language(codeSnippet.getLanguage().name())
-            .content(codeSnippet.getContentInMultipartFile())
-            .build())
-        .collect(Collectors.toList());
-  }
-
-  public String updateSnippet(Long snippetId, Long userId, CodeSnippetDTO codeSnippet) {
-    boolean canAccess = new PermissionManager().canAccess(userId, snippetId);
+  public String updateSnippet(UUID snippetId, Long userId, CodeSnippetDTO codeSnippet) {
+    boolean canAccess = canWriteSnippet(userId, snippetId);
     if (!canAccess) {
       throw new PermissionDeniedDataAccessException("You don't have permission to access this snippet", new Exception("You don't have permission to access this snippet"));
     }
@@ -82,12 +74,13 @@ public class CodeSnippetService {
     existingCodeSnippet.setTitle(codeSnippet.getTitle());
     existingCodeSnippet.setContent(codeSnippet.getContentInString());
     existingCodeSnippet.setLanguage(codeSnippet.getLanguageInEnum());
+    existingCodeSnippet.setVersion(codeSnippet.getVersion());
     codeSnippetRepository.save(existingCodeSnippet);
     return "Snippet updated successfully";
   }
 
-  public String deleteSnippet(Long snippetId, Long userId) {
-    boolean canAccess = new PermissionManager().canAccess(userId, snippetId);
+  public String deleteSnippet(UUID snippetId, Long userId) {
+    boolean canAccess = canDeleteSnippet(userId, snippetId);
     if (!canAccess) {
       throw new PermissionDeniedDataAccessException("You don't have permission to access this snippet", new Exception("You don't have permission to access this snippet"));
     }
@@ -96,5 +89,34 @@ public class CodeSnippetService {
 
     codeSnippetRepository.deleteById(snippetId);
     return "Snippet deleted successfully";
+  }
+
+  //Internal methods
+
+  private List<CodeSnippetDTO> convertToDTO(List<CodeSnippet> codeSnippets) {
+    return codeSnippets.stream()
+            .map(codeSnippet -> CodeSnippetDTO.builder()
+                    .title(codeSnippet.getTitle())
+                    .language(codeSnippet.getLanguage().name())
+                    .content(codeSnippet.getContentInMultipartFile())
+                    .version(codeSnippet.getVersion())
+                    .build())
+            .collect(Collectors.toList());
+  }
+
+  private ResponseEntity<String> createNewPermission(Long userId, CodeSnippet codeSnippet) {
+    return permissionManager.createNewPermission(userId, codeSnippet.getId());
+  }
+
+  private boolean canReadSnippet(Long userId, UUID snippetId) {
+    return permissionManager.canRead(userId, snippetId);
+  }
+
+  private boolean canWriteSnippet(Long userId, UUID snippetId) {
+    return permissionManager.canWrite(userId, snippetId);
+  }
+
+  private boolean canDeleteSnippet(Long userId, UUID snippetId) {
+    return permissionManager.canDelete(userId, snippetId);
   }
 }

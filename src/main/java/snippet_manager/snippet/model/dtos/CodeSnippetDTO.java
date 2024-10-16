@@ -15,6 +15,7 @@ import java.nio.charset.StandardCharsets;
 public class CodeSnippetDTO {
   private String title;
   private String language;
+  private String version;
   private MultipartFile content;
 
   public String getContentInString() {
