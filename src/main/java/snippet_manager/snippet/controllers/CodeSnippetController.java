@@ -27,8 +27,8 @@ public class CodeSnippetController {
     return ResponseEntity.ok(codeSnippetService.getSnippet(userId, snippetId));
   }
 
-  //GET http://localhost:8080/api/snippet/1
-  @GetMapping("/getAllSnippets/{userId}")
+  //GET http://localhost:8080/api/snippet/get-all-snippets/1
+  @GetMapping("/get-all-snippets/{userId}")
   public ResponseEntity<List<CodeSnippetDTO>> getAllSnippets(@PathVariable Long userId) {
     return ResponseEntity.ok(codeSnippetService.getAllSnippets(userId));
   }

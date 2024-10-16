@@ -1,6 +1,7 @@
 package snippet_manager.snippet.permission;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -16,6 +17,8 @@ public class PermissionManager {
   WebClientUtility webClientUtility;
 
   private final int timeOutInSeconds = 30;
+  @Value("${permission.manager.url}")
+  private String permissionManagerUrl;
 
   public boolean canAccess(Long userId, Long snippetId) {
     System.out.println("Checking permission for user " + userId + " and snippet " + snippetId);
@@ -24,8 +27,9 @@ public class PermissionManager {
             .userId(userId)
             .build();
 
+    String url = permissionManagerUrl + "/api/permission/";
     Mono<ResponseEntity<Boolean>> response = webClientUtility.postAsync(
-            "http://localhost:8003/api/permission/",
+            url,
             permissionDTO,
             Boolean.class
     );
@@ -45,7 +49,8 @@ public class PermissionManager {
             .snippetId(snippetId)
             .userId(userId)
             .build();
-    Mono<ResponseEntity<String>> response = webClientUtility.postAsync("http://localhost:8003/api/permission/new-permision", permissionDTO, String.class);
+    String url = permissionManagerUrl + "/api/permission/new-permision";
+    Mono<ResponseEntity<String>> response = webClientUtility.postAsync(url, permissionDTO, String.class);
     return response.block(Duration.ofSeconds(timeOutInSeconds));
   }
 }

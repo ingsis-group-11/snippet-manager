@@ -16,6 +16,14 @@ spring:
         jwt:
           issuer-uri: ${AUTH_SERVER_URI}
 
+permission:
+  manager:
+    url: ${PERMISSION_MANAGER_URL:http://localhost:8003}
+
+printscript:
+  service:
+    url: ${PRINTSCRIPT_SERVICE_URL:http://localhost:8004}
+
 auth0:
   audience: ${AUTH0_AUDIENCE}
 
