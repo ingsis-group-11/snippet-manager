@@ -8,8 +8,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpServerErrorException;
 import snippet_manager.snippet.model.dtos.CodeSnippetDTO;
 import snippet_manager.snippet.model.entities.CodeSnippet;
-import snippet_manager.snippet.permission.PermissionManager;
+import snippet_manager.snippet.webservice.permission.PermissionManager;
 import snippet_manager.snippet.repositories.CodeSnippetRepository;
+import snippet_manager.snippet.webservice.printscript.PrintscriptManager;
 
 import java.util.List;
 import java.util.UUID;
@@ -23,18 +24,30 @@ public class CodeSnippetService {
   @Autowired
   private PermissionManager permissionManager;
 
+  @Autowired
+  private PrintscriptManager printscriptManager;
+
   public String createSnippet(CodeSnippetDTO snippet, Long userId) {
+    compileSnippet(snippet);
     CodeSnippet codeSnippet = new CodeSnippet();
     codeSnippet.setTitle(snippet.getTitle());
     codeSnippet.setContent(snippet.getContentInString());
     codeSnippet.setLanguage(snippet.getLanguageInEnum());
     codeSnippet.setVersion(snippet.getVersion());
     codeSnippetRepository.save(codeSnippet);
-    ResponseEntity<String> permissionResponse = createNewPermission(userId, codeSnippet);
+
+    ResponseEntity<String> permissionResponse = createNewPermission(userId, codeSnippet.getId());
     if (permissionResponse.getStatusCode().isError()) {
       throw new HttpServerErrorException(permissionResponse.getStatusCode());
     }
     return "Snippet created successfully";
+  }
+
+  private void compileSnippet(CodeSnippetDTO snippet) {
+    ResponseEntity<String> compileSnippetResponse = printscriptManager.compile(snippet.getContentInString(), snippet.getLanguageInEnum(), snippet.getVersion());
+    if (compileSnippetResponse.getStatusCode().isError()) {
+      throw new HttpServerErrorException(compileSnippetResponse.getStatusCode());
+    }
   }
 
   public CodeSnippetDTO getSnippet(UUID snippetId, Long userId) {
@@ -104,8 +117,8 @@ public class CodeSnippetService {
             .collect(Collectors.toList());
   }
 
-  private ResponseEntity<String> createNewPermission(Long userId, CodeSnippet codeSnippet) {
-    return permissionManager.createNewPermission(userId, codeSnippet.getId());
+  private ResponseEntity<String> createNewPermission(Long userId, UUID snippetId) {
+    return permissionManager.createNewPermission(userId, snippetId);
   }
 
   private boolean canReadSnippet(Long userId, UUID snippetId) {

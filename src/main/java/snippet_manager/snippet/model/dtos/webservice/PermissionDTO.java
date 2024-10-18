@@ -1,4 +1,4 @@
-package snippet_manager.snippet.model.dtos;
+package snippet_manager.snippet.model.dtos.webservice;
 
 import lombok.Builder;
 import lombok.Getter;

@@ -1,4 +1,4 @@
-package snippet_manager.snippet.permission;
+package snippet_manager.snippet.webservice.permission;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -6,9 +6,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
-import snippet_manager.snippet.model.dtos.PermissionDTO;
+import snippet_manager.snippet.model.dtos.webservice.PermissionDTO;
 import snippet_manager.snippet.util.PermissionType;
-import snippet_manager.snippet.util.WebClientUtility;
+import snippet_manager.snippet.webservice.WebClientUtility;
 
 import java.time.Duration;
 import java.util.UUID;
@@ -19,6 +19,7 @@ public class PermissionManager {
   WebClientUtility webClientUtility;
 
   private final int timeOutInSeconds = 30;
+
   @Value("${permission.manager.url}")
   private String permissionManagerUrl;
 
@@ -43,6 +44,9 @@ public class PermissionManager {
   }
 
   public ResponseEntity<String> createNewPermission(Long userId, UUID snippetId){
+    if(permissionManagerUrl == null || permissionManagerUrl.isEmpty()){
+      permissionManagerUrl = "http://localhost:8081";
+    }
     PermissionDTO permissionDTO = PermissionDTO.builder()
             .snippetId(snippetId.toString())
             .userId(userId)

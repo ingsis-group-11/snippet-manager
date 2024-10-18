@@ -1,4 +1,4 @@
-package snippet_manager.snippet.util;
+package snippet_manager.snippet.webservice;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
@@ -32,23 +32,6 @@ public class WebClientUtility {
       }
       return Mono.just(clientRequest);
     });
-  }
-
-  public <T> T get(String url,  Class<T> responseType) {
-    return webClient.get()
-            .uri(url)
-            .retrieve()
-            .bodyToMono(responseType)
-            .block();
-  }
-
-  public <T> String post(String url, T requestBody) {
-    return webClient.post()
-            .uri(url)
-            .bodyValue(requestBody)
-            .retrieve()
-            .bodyToMono(String.class)
-            .block();
   }
 
   public <T> Mono<T> getAsync(String url, Class<T> responseType) {
