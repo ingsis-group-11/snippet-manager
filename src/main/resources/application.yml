@@ -24,6 +24,10 @@ printscript:
   service:
     url: ${PRINTSCRIPT_SERVICE_URL:http://localhost:8004}
 
+asset:
+  manager:
+    url: ${ASSET_MANAGER_URL:http://localhost:8080}
+
 auth0:
   audience: ${AUTH0_AUDIENCE}
 

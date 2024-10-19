@@ -29,7 +29,30 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
 
+  asset-service:
+    container_name: asset-service-api
+    image: ghcr.io/austral-ingsis/snippet-asset-service:latest
+    ports:
+      - "8080:8080"
+    environment:
+      AZURE_HOST: "http://azurite"
+      NEW_RELIC_APP_NAME: "asset-service"
+      NEW_RELIC_AGENT_ENABLED: false
+
+
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite
+    container_name: azurite-snippet-manager
+    hostname: azurite
+    restart: always
+    ports:
+      - "10000:10000"
+      - "10001:10001"
+      - "10002:10002"
+    volumes:
+      - blob:/workspace
+
 
 volumes:
+  blob:
   pgdata:
-    external: false
