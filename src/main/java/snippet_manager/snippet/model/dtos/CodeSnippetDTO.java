@@ -13,7 +13,7 @@ import java.nio.charset.StandardCharsets;
 @Getter
 @Setter
 public class CodeSnippetDTO {
-  private String title;
+  private String assetId;
   private String language;
   private String version;
   private MultipartFile content;
