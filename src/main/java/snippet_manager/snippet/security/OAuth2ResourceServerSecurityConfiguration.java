@@ -34,12 +34,9 @@ public class OAuth2ResourceServerSecurityConfiguration {
                 authz
                     .requestMatchers("/")
                     .permitAll()
-                    .requestMatchers(HttpMethod.GET, "/api")
-                    .hasAuthority("SCOPE_read:snippets")
-                    .requestMatchers(HttpMethod.GET, "/api/*")
-                    .hasAuthority("SCOPE_read:snippets")
-                    .requestMatchers(HttpMethod.POST, "/api/*")
-                    .hasAuthority("SCOPE_write:snippets")
+                    .requestMatchers(HttpMethod.GET, "/api").hasAuthority("SCOPE_read:snippets")
+                    .requestMatchers(HttpMethod.GET, "/api/**").hasAuthority("SCOPE_read:snippets")
+                    .requestMatchers(HttpMethod.PUT, "/api/**").hasAuthority("SCOPE_write:snippets")
                     .anyRequest()
                     .authenticated())
         .oauth2ResourceServer(oauth2 -> oauth2.jwt(withDefaults()))
@@ -54,7 +51,7 @@ public class OAuth2ResourceServerSecurityConfiguration {
     OAuth2TokenValidator<Jwt> audienceValidator = new AudienceValidator(audience);
     OAuth2TokenValidator<Jwt> withIssuer = JwtValidators.createDefaultWithIssuer(issuer);
     OAuth2TokenValidator<Jwt> withAudience =
-        new DelegatingOAuth2TokenValidator<>(withIssuer, audienceValidator);
+            new DelegatingOAuth2TokenValidator<>(withIssuer, audienceValidator);
     jwtDecoder.setJwtValidator(withAudience);
     return jwtDecoder;
   }

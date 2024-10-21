@@ -2,6 +2,7 @@ package snippet_manager.snippet.webservice.asset;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DefaultDataBufferFactory;
 import org.springframework.http.ResponseEntity;
@@ -29,41 +30,44 @@ public class AssetManager {
     private String assetManagerUrl;
 
     public InputStream getAsset(String container, String assetKey) {
-        String url = assetManagerUrl + "v1/asset/" + container + "/" + assetKey;
+        String url = assetManagerUrl + "/v1/asset/" + container + "/" + assetKey;
         return webClientUtility.getInputStream(url);
     }
 
-    public ResponseEntity createAsset(String container, String assetKey, MultipartFile content) throws IOException {
-        String url = assetManagerUrl + "v1/asset/" + container + "/" + assetKey;
-        Mono<ResponseEntity> response = webClientUtility.putFlux(convertMultipartFileToFlux(content), url, ResponseEntity.class);
+    public ResponseEntity<String> createAsset(String container, String assetKey, MultipartFile content) {
+        String url = assetManagerUrl + "/v1/asset/" + container + "/" + assetKey;
+        Mono<ResponseEntity<String>> response = webClientUtility.putFlux(convertMultipartFileToFlux(content), url, String.class);
         return response.block(Duration.ofSeconds(timeOutInSeconds));
     }
 
-    public ResponseEntity deleteAsset(String container, String assetKey) {
-        String url = assetManagerUrl + "v1/asset/" + container + "/" + assetKey;
-        Mono<ResponseEntity> response = webClientUtility.delete(url, ResponseEntity.class);
+    public ResponseEntity<String> deleteAsset(String container, String assetKey) {
+        String url = assetManagerUrl + "/v1/asset/" + container + "/" + assetKey;
+        Mono<ResponseEntity<String>> response = webClientUtility.deleteAsync(url, String.class);
         return response.block(Duration.ofSeconds(timeOutInSeconds));
     }
 
-    private Flux<DataBuffer> convertMultipartFileToFlux(MultipartFile multipartFile) throws IOException {
-        InputStream inputStream = multipartFile.getInputStream();
+    private Flux<DataBuffer> convertMultipartFileToFlux(MultipartFile multipartFile) {
+        try {
+            InputStream inputStream = multipartFile.getInputStream();
+            return Flux.generate(sink -> {
+                try {
+                    ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
+                    int readBytes = Channels.newChannel(inputStream).read(byteBuffer);
 
-        return Flux.generate(sink -> {
-            try {
-                ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
-                int readBytes = Channels.newChannel(inputStream).read(byteBuffer);
-
-                if (readBytes == -1) {
-                    sink.complete();
-                } else {
-                    byteBuffer.flip();
-                    DataBuffer dataBuffer = new DefaultDataBufferFactory().wrap(byteBuffer);
-                    sink.next(dataBuffer);
+                    if (readBytes == -1) {
+                        sink.complete();
+                    } else {
+                        byteBuffer.flip();
+                        DataBuffer dataBuffer = new DefaultDataBufferFactory().wrap(byteBuffer);
+                        sink.next(dataBuffer);
+                    }
+                } catch (IOException e) {
+                    sink.error(e);
                 }
-            } catch (IOException e) {
-                sink.error(e);
-            }
-        });
+            });
+        } catch (IOException e) {
+            throw new RuntimeException("Error reading the file content: " + multipartFile.getName(), e);
+        }
     }
 
 }

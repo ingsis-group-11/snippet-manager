@@ -30,6 +30,14 @@ public class WebClientUtility {
             .build();
   }
 
+  private String getCurrentToken() {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    if (authentication != null && authentication.getPrincipal() instanceof Jwt jwt) {
+      return jwt.getTokenValue();
+    }
+    return null;
+  }
+
   private ExchangeFilterFunction authorizationHeaderFilter() {
     return ExchangeFilterFunction.ofRequestProcessor(clientRequest -> {
       String token = getCurrentToken();
@@ -54,13 +62,35 @@ public class WebClientUtility {
     return new ByteArrayInputStream(byteArray);
   }
 
-  public <T> Mono<T> putFlux(Flux<DataBuffer> dataBufferFlux, String url, Class<T> responseType) {
+  public <T> Mono<ResponseEntity<T>> putFlux(Flux<DataBuffer> dataBufferFlux, String url, Class<T> responseType) {
     return this.webClient.put()
             .uri(url)
             .contentType(MediaType.APPLICATION_OCTET_STREAM)
             .body(BodyInserters.fromPublisher(dataBufferFlux, DataBuffer.class))
             .retrieve()
+            .toEntity(responseType);
+  }
+
+  public <T> Mono<T> getAsync(String url, Class<T> responseType) {
+    return webClient.get()
+            .uri(url)
+            .retrieve()
             .bodyToMono(responseType);
+  }
+
+  public <T, R> Mono<ResponseEntity<R>> postAsync(String url, T body, Class<R> responseType) {
+    return webClient.post()
+            .uri(url)
+            .bodyValue(body)
+            .retrieve()
+            .toEntity(responseType);
+  }
+
+  public <T> Mono<ResponseEntity<T>> deleteAsync(String url, Class<T> responseEntityClass) {
+    return webClient.delete()
+            .uri(url)
+            .retrieve()
+            .toEntity(responseEntityClass);
   }
 
   private byte[] getBytes(Flux<DataBuffer> dataBufferFlux) {
@@ -80,35 +110,5 @@ public class WebClientUtility {
             })
             .block();
     return byteArray;
-  }
-
-  public <T> Mono<T> getAsync(String url, Class<T> responseType) {
-    return webClient.get()
-            .uri(url)
-            .retrieve()
-            .bodyToMono(responseType);
-  }
-
-  public <T, R> Mono<ResponseEntity<R>> postAsync(String url, T body, Class<R> responseType) {
-    return webClient.post()
-            .uri(url)
-            .bodyValue(body)
-            .retrieve()
-            .toEntity(responseType);
-  }
-
-  private String getCurrentToken() {
-    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    if (authentication != null && authentication.getPrincipal() instanceof Jwt jwt) {
-      return jwt.getTokenValue();
-    }
-    return null;
-  }
-
-  public <T> Mono<T> delete(String url, Class<T> responseEntityClass) {
-    return webClient.delete()
-            .uri(url)
-            .retrieve()
-            .bodyToMono(responseEntityClass);
   }
 }
