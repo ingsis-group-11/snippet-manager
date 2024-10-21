@@ -18,23 +18,15 @@ public class CodeSnippet {
   @GeneratedValue(strategy = GenerationType.UUID)
   private UUID id;
 
-  private String title;
+  private String assetId = UUID.randomUUID().toString();
 
   @Enumerated(EnumType.STRING)
   private CodeLanguage language;
-
-  @Lob
-  @Column(columnDefinition = "TEXT")
-  private String content;
 
   private String version;
 
   private LocalDateTime createdAt;
   private LocalDateTime updatedAt;
-
-  public MultipartFile getContentInMultipartFile() {
-    return new StringToMultipartFile(content, title, title, "text/plain");
-  }
 
   @PrePersist
   protected void onCreate() {
