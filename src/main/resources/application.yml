@@ -1,15 +1,43 @@
 spring:
   application:
     name: back
+  servlet:
+    multipart:
+      enabled: true
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/snippet-manager-db}
-    username: ${SPRING_DATASOURCE_USERNAME:admin}
-    password: ${SPRING_DATASOURCE_PASSWORD:admin}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:snippet-manager-db}}
+    username: ${SPRING_DATASOURCE_USERNAME:${DB_USER:admin}}
+    password: ${SPRING_DATASOURCE_PASSWORD:${DB_PASSWORD:admin}}
   jpa:
     hibernate:
       ddl-auto: create
     database-platform: org.hibernate.dialect.PostgreSQLDialect
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${AUTH_SERVER_URI}
+
+permission:
+  manager:
+    url: ${PERMISSION_MANAGER_URL:http://localhost:8003}
+
+printscript:
+  service:
+    url: ${PRINTSCRIPT_SERVICE_URL:http://localhost:8004}
+
+asset:
+  manager:
+    url: ${ASSET_MANAGER_URL:http://localhost:8082}
+
+auth0:
+  audience: ${AUTH0_AUDIENCE}
 
 server:
-  port: 8081
+  port: ${DOCKER_PORT:8000}
+
+logging:
+  level:
+    org.springframework.web: DEBUG
+    org.springframework.security: DEBUG

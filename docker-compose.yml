@@ -11,9 +11,12 @@ services:
     environment: # Poner estas variables en un archivo .env
       DB_USER: admin
       DB_PASSWORD: admin
-      DB_NAME: compose-db
-      DB_HOST: postgres_db
+      DB_NAME: snippet-manager-db
+      DB_HOST: db
       DB_PORT: 5432
+      DOCKER_PORT: 8080
+    env_file:
+      - .env
   db:
     container_name: snippet-manager-db
     image: postgres:latest
@@ -26,16 +29,30 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
 
-  pgadmin:
-    image: dpage/pgadmin4
-    environment:
-      PGADMIN_DEFAULT_EMAIL: "tomi.serra@gmail.com"
-      PGADMIN_DEFAULT_PASSWORD: "admin"
+  asset-service:
+    container_name: asset-service-api
+    image: ghcr.io/austral-ingsis/snippet-asset-service:latest
     ports:
-      - "80:80"
-    depends_on:
-      - db
+      - "8082:8080"
+    environment:
+      AZURE_HOST: "http://azurite"
+      NEW_RELIC_APP_NAME: "asset-service"
+      NEW_RELIC_AGENT_ENABLED: false
+
+
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite
+    container_name: azurite-snippet-manager
+    hostname: azurite
+    restart: always
+    ports:
+      - "10000:10000"
+      - "10001:10001"
+      - "10002:10002"
+    volumes:
+      - blob:/workspace
+
 
 volumes:
+  blob:
   pgdata:
-    external: false
