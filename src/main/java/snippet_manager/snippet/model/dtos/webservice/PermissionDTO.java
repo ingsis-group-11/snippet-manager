@@ -9,7 +9,7 @@ import snippet_manager.snippet.util.PermissionType;
 @Getter
 @Setter
 public class PermissionDTO {
-  private Long userId;
+  private String userId;
   private String snippetId;
   private PermissionType permission;
 }

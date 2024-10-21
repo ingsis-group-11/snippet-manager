@@ -23,7 +23,7 @@ public class PermissionManager {
   @Value("${permission.manager.url}")
   private String permissionManagerUrl;
 
-  public boolean canRead(Long userId, UUID snippetId) {
+  public boolean canRead(String userId, UUID snippetId) {
     PermissionDTO body = PermissionDTO.builder()
             .snippetId(snippetId.toString())
             .userId(userId)
@@ -33,7 +33,7 @@ public class PermissionManager {
     return fetchPermissionData(body);
   }
 
-  public boolean canWrite(Long userId, UUID snippetId) {
+  public boolean canWrite(String userId, UUID snippetId) {
     PermissionDTO body = PermissionDTO.builder()
             .snippetId(snippetId.toString())
             .userId(userId)
@@ -43,7 +43,7 @@ public class PermissionManager {
     return fetchPermissionData(body);
   }
 
-  public ResponseEntity<String> createNewPermission(Long userId, UUID snippetId){
+  public ResponseEntity<String> createNewPermission(String userId, UUID snippetId){
     if(permissionManagerUrl == null || permissionManagerUrl.isEmpty()){
       permissionManagerUrl = "http://localhost:8081";
     }
@@ -56,7 +56,7 @@ public class PermissionManager {
     return response.block(Duration.ofSeconds(timeOutInSeconds));
   }
 
-  public boolean canDelete(Long userId, UUID snippetId) {
+  public boolean canDelete(String userId, UUID snippetId) {
     PermissionDTO body = PermissionDTO.builder()
             .snippetId(snippetId.toString())
             .userId(userId)

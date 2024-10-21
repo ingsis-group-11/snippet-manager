@@ -1,6 +1,9 @@
 spring:
   application:
     name: back
+  servlet:
+    multipart:
+      enabled: true
   datasource:
     driver-class-name: org.postgresql.Driver
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:snippet-manager-db}}
@@ -26,10 +29,15 @@ printscript:
 
 asset:
   manager:
-    url: ${ASSET_MANAGER_URL:http://localhost:8080}
+    url: ${ASSET_MANAGER_URL:http://localhost:8082}
 
 auth0:
   audience: ${AUTH0_AUDIENCE}
 
 server:
   port: ${DOCKER_PORT:8000}
+
+logging:
+  level:
+    org.springframework.web: DEBUG
+    org.springframework.security: DEBUG

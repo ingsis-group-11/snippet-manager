@@ -35,7 +35,7 @@ dependencies {
 	implementation 'io.github.cdimascio:dotenv-java:2.2.0'
 
 	annotationProcessor 'org.projectlombok:lombok'
-	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	implementation 'org.springframework.boot:spring-boot-starter-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 	testImplementation 'com.h2database:h2'
 	testImplementation 'org.mockito:mockito-core'
