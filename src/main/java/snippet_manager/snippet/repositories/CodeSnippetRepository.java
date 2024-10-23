@@ -5,9 +5,10 @@ import org.springframework.stereotype.Repository;
 import snippet_manager.snippet.model.entities.CodeSnippet;
 
 import java.util.Optional;
-import java.util.UUID;
 
 @Repository
-public interface CodeSnippetRepository extends JpaRepository<CodeSnippet, UUID> {
-  Optional<Object> findCodeSnippetByAssetId(String assetId);
+public interface CodeSnippetRepository extends JpaRepository<CodeSnippet, String> {
+  Optional<CodeSnippet> findCodeSnippetByAssetId(String assetId);
+
+  Optional<CodeSnippet> deleteCodeSnippetByAssetId(String assetId);
 }

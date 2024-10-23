@@ -11,7 +11,6 @@ import snippet_manager.snippet.util.PermissionType;
 import snippet_manager.snippet.webservice.WebClientUtility;
 
 import java.time.Duration;
-import java.util.UUID;
 
 @Component
 public class PermissionManager {
@@ -23,9 +22,9 @@ public class PermissionManager {
   @Value("${permission.manager.url}")
   private String permissionManagerUrl;
 
-  public boolean canRead(String userId, UUID snippetId) {
+  public boolean canRead(String userId, String snippetId) {
     PermissionDTO body = PermissionDTO.builder()
-            .snippetId(snippetId.toString())
+            .snippetId(snippetId)
             .userId(userId)
             .permission(PermissionType.READ)
             .build();
@@ -33,9 +32,9 @@ public class PermissionManager {
     return fetchPermissionData(body);
   }
 
-  public boolean canWrite(String userId, UUID snippetId) {
+  public boolean canWrite(String userId, String snippetId) {
     PermissionDTO body = PermissionDTO.builder()
-            .snippetId(snippetId.toString())
+            .snippetId(snippetId)
             .userId(userId)
             .permission(PermissionType.READ_WRITE)
             .build();
@@ -43,12 +42,12 @@ public class PermissionManager {
     return fetchPermissionData(body);
   }
 
-  public ResponseEntity<String> createNewPermission(String userId, UUID snippetId){
+  public ResponseEntity<String> createNewPermission(String userId, String snippetId){
     if(permissionManagerUrl == null || permissionManagerUrl.isEmpty()){
       permissionManagerUrl = "http://localhost:8081";
     }
     PermissionDTO permissionDTO = PermissionDTO.builder()
-            .snippetId(snippetId.toString())
+            .snippetId(snippetId)
             .userId(userId)
             .build();
     String url = permissionManagerUrl + "/api/permission/new-permision";
@@ -56,9 +55,18 @@ public class PermissionManager {
     return response.block(Duration.ofSeconds(timeOutInSeconds));
   }
 
-  public boolean canDelete(String userId, UUID snippetId) {
+  public ResponseEntity<String> deletePermission(String userId, String snippetId){
+    if(permissionManagerUrl == null || permissionManagerUrl.isEmpty()){
+      permissionManagerUrl = "http://localhost:8081";
+    }
+    String url = permissionManagerUrl + "/api/permission/";
+    Mono<ResponseEntity<String>> response = webClientUtility.deleteAsync(url, String.class);
+    return response.block(Duration.ofSeconds(timeOutInSeconds));
+  }
+
+  public boolean canDelete(String userId, String snippetId) {
     PermissionDTO body = PermissionDTO.builder()
-            .snippetId(snippetId.toString())
+            .snippetId(snippetId)
             .userId(userId)
             .permission(PermissionType.DELETE)
             .build();

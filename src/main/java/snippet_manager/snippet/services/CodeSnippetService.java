@@ -18,7 +18,6 @@ import snippet_manager.snippet.webservice.printscript.PrintscriptManager;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -37,36 +36,36 @@ public class CodeSnippetService {
 
   public String createSnippet(CodeSnippetDTO snippet, String userId) {
     //compileSnippet(snippet);
-    System.out.println(userId);
     codeSnippetRepository.findCodeSnippetByAssetId(snippet.getAssetId()).ifPresent(codeSnippet -> {
       throw new IllegalArgumentException("Snippet with the same assetId already exists");
     });
     CodeSnippet codeSnippet = createAndSaveCodeSnippet(snippet);
 
-    /*ResponseEntity<String> permissionResponse = createNewPermission(userId, codeSnippet.getId());
+    ResponseEntity<String> permissionResponse = createNewPermission(userId, codeSnippet.getId());
     if (permissionResponse.getStatusCode().isError()) {
       codeSnippetRepository.deleteById(codeSnippet.getId());
       throw new HttpServerErrorException(permissionResponse.getStatusCode());
-    }*/
+    }
 
     ResponseEntity<String> assetResponse = createNewAsset(snippet);
     if (assetResponse.getStatusCode().isError()) {
       codeSnippetRepository.deleteById(codeSnippet.getId());
+      deletePermission(userId, codeSnippet.getId());
       throw new HttpServerErrorException(assetResponse.getStatusCode());
     }
 
     return "Snippet created successfully";
   }
 
-  public CodeSnippetDTO getSnippet(UUID snippetId, String userId) {
-    boolean canAccess = canReadSnippet(userId, snippetId);
+  public CodeSnippetDTO getSnippet(String assetId, String userId) {
+    boolean canAccess = canReadSnippet(userId, assetId);
     if (!canAccess) {
       throw new PermissionDeniedDataAccessException("You don't have permission to access this snippet", new Exception("You don't have permission to access this snippet"));
     }
-    CodeSnippet codeSnippet = findSnippet(snippetId);
+    CodeSnippet codeSnippet = findSnippetByAssetId(assetId);
 
-    InputStream assetResponse = getAsset(codeSnippet);
-    MultipartFile snippetContent = toMultipartFile(assetResponse, codeSnippet.getAssetId());
+    InputStream assetResponse = getAsset(assetId);
+    MultipartFile snippetContent = toMultipartFile(assetResponse, assetId);
     return convertToDTO(codeSnippet, snippetContent);
   }
 
@@ -74,9 +73,9 @@ public class CodeSnippetService {
     List<CodeSnippet> codeSnippets = codeSnippetRepository.findAll();
 
     List<CodeSnippetDTO> codeSnippetDTOS = codeSnippets.stream()
-            /*.filter(codeSnippet -> canReadSnippet(userId, codeSnippet.getId()))*/
+            .filter(codeSnippet -> canReadSnippet(userId, codeSnippet.getId()))
             .map(codeSnippet -> {
-              InputStream assetResponse = getAsset(codeSnippet);
+              InputStream assetResponse = getAsset(codeSnippet.getAssetId());
               MultipartFile asset = toMultipartFile(assetResponse, codeSnippet.getAssetId());
 
               return convertToDTO(codeSnippet, asset);
@@ -86,14 +85,14 @@ public class CodeSnippetService {
     return codeSnippetDTOS;
   }
 
-  public String updateSnippet(UUID snippetId, String userId, CodeSnippetDTO codeSnippet) {
-    boolean canAccess = canWriteSnippet(userId, snippetId);
+  public String updateSnippet(String assetId, String userId, CodeSnippetDTO codeSnippet) {
+    boolean canAccess = canWriteSnippet(userId, assetId);
     if (!canAccess) {
       throw new PermissionDeniedDataAccessException("You don't have permission to write this snippet", new Exception("You don't have permission to write this snippet"));
     }
-    CodeSnippet existingCodeSnippet = findSnippet(snippetId);
+    CodeSnippet existingCodeSnippet = findSnippetByAssetId(assetId);
 
-    ResponseEntity<?> assetResponse = assetManager.createAsset("snippets", existingCodeSnippet.getAssetId(), codeSnippet.getContent());
+    ResponseEntity<?> assetResponse = assetManager.createAsset("snippets", assetId, codeSnippet.getContent());
     if (assetResponse.getStatusCode().isError()) {
       throw new HttpServerErrorException(assetResponse.getStatusCode());
     }
@@ -103,18 +102,18 @@ public class CodeSnippetService {
     return "Snippet updated successfully";
   }
 
-  public String deleteSnippet(UUID snippetId, String userId) {
-    boolean canAccess = canDeleteSnippet(userId, snippetId);
+  public String deleteSnippet(String assetId, String userId) {
+    boolean canAccess = canDeleteSnippet(userId, assetId);
     if (!canAccess) {
       throw new PermissionDeniedDataAccessException("You don't have permission to access this snippet", new Exception("You don't have permission to access this snippet"));
     }
-    CodeSnippet codeSnippet = findSnippet(snippetId);
+    findSnippetByAssetId(assetId);
 
-    ResponseEntity<?> assetResponse = deleteAsset(snippetId);
+    ResponseEntity<?> assetResponse = deleteAsset(assetId);
     if (assetResponse.getStatusCode().isError()) {
       throw new HttpServerErrorException(assetResponse.getStatusCode());
     }
-    codeSnippetRepository.delete(codeSnippet);
+    codeSnippetRepository.deleteCodeSnippetByAssetId(assetId);
     return "Snippet deleted successfully";
   }
 
@@ -132,13 +131,19 @@ public class CodeSnippetService {
     return CodeSnippetDTO.builder()
             .language(codeSnippets.getLanguage().name())
             .version(codeSnippets.getVersion())
+            .assetId(codeSnippets.getAssetId())
             .content(content)
             .build();
   }
 
-  private CodeSnippet findSnippet(UUID snippetId) {
+  private CodeSnippet findSnippetById(String snippetId) {
     return codeSnippetRepository.findById(snippetId)
             .orElseThrow(() -> new EntityNotFoundException("Snippet not found with id " + snippetId));
+  }
+
+  private CodeSnippet findSnippetByAssetId(String assetId) {
+    return codeSnippetRepository.findCodeSnippetByAssetId(assetId)
+            .orElseThrow(() -> new EntityNotFoundException("Snippet not found with assetId " + assetId));
   }
 
   // ** Printscript manager
@@ -152,20 +157,24 @@ public class CodeSnippetService {
 
   // ** Permission manager
 
-  private ResponseEntity<String> createNewPermission(String userId, UUID snippetId) {
+  private ResponseEntity<String> createNewPermission(String userId, String snippetId) {
     return permissionManager.createNewPermission(userId, snippetId);
   }
 
-  private boolean canReadSnippet(String userId, UUID snippetId) {
+  private boolean canReadSnippet(String userId, String snippetId) {
     return permissionManager.canRead(userId, snippetId);
   }
 
-  private boolean canWriteSnippet(String userId, UUID snippetId) {
+  private boolean canWriteSnippet(String userId, String snippetId) {
     return permissionManager.canWrite(userId, snippetId);
   }
 
-  private boolean canDeleteSnippet(String userId, UUID snippetId) {
+  private boolean canDeleteSnippet(String userId, String snippetId) {
     return permissionManager.canDelete(userId, snippetId);
+  }
+
+  private ResponseEntity<String> deletePermission(String userId, String snippetId) {
+    return permissionManager.deletePermission(userId, snippetId);
   }
 
   // ** Asset manager
@@ -174,12 +183,12 @@ public class CodeSnippetService {
     return assetManager.createAsset("snippets", snippet.getAssetId(), snippet.getContent());
   }
 
-  private InputStream getAsset(CodeSnippet codeSnippet) {
-    return assetManager.getAsset("snippets", codeSnippet.getAssetId());
+  private InputStream getAsset(String assetId) {
+    return assetManager.getAsset("snippets", assetId);
   }
 
-  private ResponseEntity<String> deleteAsset(UUID snippetId) {
-    return assetManager.deleteAsset("snippets", snippetId.toString());
+  private ResponseEntity<String> deleteAsset(String snippetId) {
+    return assetManager.deleteAsset("snippets", snippetId);
   }
 
   private MultipartFile toMultipartFile(InputStream assetResponse, String fileName) {

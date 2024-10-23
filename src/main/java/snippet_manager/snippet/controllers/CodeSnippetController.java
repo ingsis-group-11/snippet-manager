@@ -45,7 +45,7 @@ public class CodeSnippetController {
 
   //GET http://localhost:8080/api/snippet/{snippetId}
   @GetMapping("/{snippetId}")
-  public ResponseEntity<CodeSnippetDTO> getSnippet(@PathVariable UUID snippetId) {
+  public ResponseEntity<CodeSnippetDTO> getSnippet(@PathVariable String snippetId) {
     return ResponseEntity.ok(codeSnippetService.getSnippet(snippetId, getUserId()));
   }
 
@@ -57,7 +57,7 @@ public class CodeSnippetController {
 
   //PUT http://localhost:8080/api/snippet/{snippetId}
   @PutMapping("/{snippetId}")
-  public ResponseEntity<String> updateSnippet(@PathVariable UUID snippetId,
+  public ResponseEntity<String> updateSnippet(@PathVariable String snippetId,
                                               @RequestParam("file") MultipartFile file,
                                               @RequestParam("name") String fileName,
                                               @RequestParam("version") String version,
@@ -73,7 +73,7 @@ public class CodeSnippetController {
 
   //DELETE http://localhost:8080/api/snippet/{snippetId}
   @DeleteMapping("/{snippetId}")
-  public ResponseEntity<String> deleteSnippet(@PathVariable UUID snippetId) {
+  public ResponseEntity<String> deleteSnippet(@PathVariable String snippetId) {
     return ResponseEntity.ok(codeSnippetService.deleteSnippet(snippetId, getUserId()));
   }
 }
