@@ -7,10 +7,16 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.multipart.MultipartFile;
 import snippet_manager.snippet.model.dtos.CodeSnippetDTO;
 import snippet_manager.snippet.services.CodeSnippetService;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -19,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 public class SnippetControllerTest {
-  /*
+
   @Mock
   private CodeSnippetService codeSnippetService;
 
@@ -29,12 +35,22 @@ public class SnippetControllerTest {
   @BeforeEach
   void setUp() {
     MockitoAnnotations.openMocks(this);
+
+    SecurityContext securityContext = mock(SecurityContext.class);
+    Authentication authentication = mock(Authentication.class);
+    Jwt jwt = mock(Jwt.class);
+
+    when(securityContext.getAuthentication()).thenReturn(authentication);
+    when(authentication.getPrincipal()).thenReturn(jwt);
+    when(jwt.getClaimAsString("sub")).thenReturn("1");
+
+    SecurityContextHolder.setContext(securityContext);
   }
 
   @Test
   void createSnippet() {
     MultipartFile file = mock(MultipartFile.class);
-    Long userId = 1L;
+    String userId = "1";
     String version = "1.0";
     String title = "Test Title";
     String language = "Java";
@@ -42,7 +58,7 @@ public class SnippetControllerTest {
 
     when(codeSnippetService.createSnippet(any(CodeSnippetDTO.class), eq(userId))).thenReturn(expectedResponse);
 
-    ResponseEntity<String> response = codeSnippetController.createSnippet(file, version, title, language, userId);
+    ResponseEntity<String> response = codeSnippetController.createSnippet(file, version, title, language);
 
     assertEquals(HttpStatus.OK, response.getStatusCode());
     assertEquals(expectedResponse, response.getBody());
@@ -51,17 +67,17 @@ public class SnippetControllerTest {
 
   @Test
   void getSnippet() {
-    UUID snippetId = UUID.randomUUID();
-    Long userId = 1L;
+    String snippetId = UUID.randomUUID().toString();
+    String userId = "1";
     CodeSnippetDTO snippetDTO = CodeSnippetDTO.builder()
-            .title("Test Title")
             .version("1.0")
             .language("Java")
+            .content(mockMultipartFile("example content"))
             .build();
 
     when(codeSnippetService.getSnippet(snippetId, userId)).thenReturn(snippetDTO);
 
-    ResponseEntity<CodeSnippetDTO> response = codeSnippetController.getSnippet(snippetId, userId);
+    ResponseEntity<CodeSnippetDTO> response = codeSnippetController.getSnippet(snippetId);
 
     assertEquals(HttpStatus.OK, response.getStatusCode());
     assertEquals(snippetDTO, response.getBody());
@@ -70,15 +86,15 @@ public class SnippetControllerTest {
 
   @Test
   void getAllSnippets() {
-    Long userId = 1L;
+    String userId = "1";
     List<CodeSnippetDTO> snippets = Arrays.asList(
-            CodeSnippetDTO.builder().title("Test Title 1").build(),
-            CodeSnippetDTO.builder().title("Test Title 2").build()
+            CodeSnippetDTO.builder().build(),
+            CodeSnippetDTO.builder().build()
     );
 
     when(codeSnippetService.getAllSnippets(userId)).thenReturn(snippets);
 
-    ResponseEntity<List<CodeSnippetDTO>> response = codeSnippetController.getAllSnippets(userId);
+    ResponseEntity<List<CodeSnippetDTO>> response = codeSnippetController.getAllSnippets();
 
     assertEquals(HttpStatus.OK, response.getStatusCode());
     assertEquals(snippets, response.getBody());
@@ -87,9 +103,9 @@ public class SnippetControllerTest {
 
   @Test
   void updateSnippet() {
-    UUID snippetId = UUID.randomUUID();
-    MultipartFile file = mock(MultipartFile.class);
-    Long userId = 1L;
+    String snippetId = UUID.randomUUID().toString();
+    MultipartFile file = mockMultipartFile("test content");
+    String userId = "1";
     String title = "Updated Title";
     String version = "1.1";
     String language = "PRINTSCRIPT";
@@ -97,7 +113,7 @@ public class SnippetControllerTest {
 
     when(codeSnippetService.updateSnippet(eq(snippetId), eq(userId), any(CodeSnippetDTO.class))).thenReturn(expectedResponse);
 
-    ResponseEntity<String> response = codeSnippetController.updateSnippet(snippetId, file, title, version, language, userId);
+    ResponseEntity<String> response = codeSnippetController.updateSnippet(snippetId, file, title, version, language);
 
     assertEquals(HttpStatus.OK, response.getStatusCode());
     assertEquals(expectedResponse, response.getBody());
@@ -106,16 +122,20 @@ public class SnippetControllerTest {
 
   @Test
   void deleteSnippet() {
-    UUID snippetId = UUID.randomUUID();
-    Long userId = 1L;
+    String snippetId = UUID.randomUUID().toString();
+    String userId = "1";
     String expectedResponse = "Snippet deleted successfully";
 
     when(codeSnippetService.deleteSnippet(snippetId, userId)).thenReturn(expectedResponse);
 
-    ResponseEntity<String> response = codeSnippetController.deleteSnippet(snippetId, userId);
+    ResponseEntity<String> response = codeSnippetController.deleteSnippet(snippetId);
 
     assertEquals(HttpStatus.OK, response.getStatusCode());
     assertEquals(expectedResponse, response.getBody());
     verify(codeSnippetService).deleteSnippet(snippetId, userId);
-  }*/
+  }
+
+  private MultipartFile mockMultipartFile(String content){
+    return new MockMultipartFile("test-snippet", content.getBytes(StandardCharsets.UTF_8));
+  }
 }

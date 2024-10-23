@@ -3,9 +3,7 @@ package snippet_manager.snippet.model.entities;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import org.springframework.web.multipart.MultipartFile;
 import snippet_manager.snippet.util.CodeLanguage;
-import snippet_manager.snippet.util.StringToMultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -16,7 +14,7 @@ import java.util.UUID;
 public class CodeSnippet {
   @Id
   @GeneratedValue(strategy = GenerationType.UUID)
-  private UUID id;
+  private String id;
 
   private String assetId = UUID.randomUUID().toString();
 
