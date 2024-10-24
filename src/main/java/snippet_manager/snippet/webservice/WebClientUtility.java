@@ -86,6 +86,14 @@ public class WebClientUtility {
             .toEntity(responseType);
   }
 
+  public <T, R> Mono<ResponseEntity<R>> putAsync(String url, T body, Class<R> responseType) {
+    return webClient.put()
+            .uri(url)
+            .bodyValue(body)
+            .retrieve()
+            .toEntity(responseType);
+  }
+
   public <T> Mono<ResponseEntity<T>> deleteAsync(String url, Class<T> responseEntityClass) {
     return webClient.delete()
             .uri(url)

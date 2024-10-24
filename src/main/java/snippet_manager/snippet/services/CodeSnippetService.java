@@ -8,7 +8,8 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.multipart.MultipartFile;
-import snippet_manager.snippet.model.dtos.CodeSnippetDTO;
+import snippet_manager.snippet.model.dtos.SnippetReceivedDTO;
+import snippet_manager.snippet.model.dtos.SnippetSendDTO;
 import snippet_manager.snippet.model.entities.CodeSnippet;
 import snippet_manager.snippet.webservice.asset.AssetManager;
 import snippet_manager.snippet.webservice.permission.PermissionManager;
@@ -34,8 +35,10 @@ public class CodeSnippetService {
   @Autowired
   private AssetManager assetManager;
 
-  public String createSnippet(CodeSnippetDTO snippet, String userId) {
-    //compileSnippet(snippet);
+  private final String assetManagerContainer = "snippets";
+
+  public String createSnippet(SnippetReceivedDTO snippet, String userId) {
+    compileSnippet(snippet);
     codeSnippetRepository.findCodeSnippetByAssetId(snippet.getAssetId()).ifPresent(codeSnippet -> {
       throw new IllegalArgumentException("Snippet with the same assetId already exists");
     });
@@ -57,7 +60,7 @@ public class CodeSnippetService {
     return "Snippet created successfully";
   }
 
-  public CodeSnippetDTO getSnippet(String assetId, String userId) {
+  public SnippetSendDTO getSnippet(String assetId, String userId) {
     boolean canAccess = canReadSnippet(userId, assetId);
     if (!canAccess) {
       throw new PermissionDeniedDataAccessException("You don't have permission to access this snippet", new Exception("You don't have permission to access this snippet"));
@@ -66,26 +69,26 @@ public class CodeSnippetService {
 
     InputStream assetResponse = getAsset(assetId);
     MultipartFile snippetContent = toMultipartFile(assetResponse, assetId);
-    return convertToDTO(codeSnippet, snippetContent);
+    return convertToSnippetSendDTO(codeSnippet, snippetContent);
   }
 
-  public List<CodeSnippetDTO> getAllSnippets(String userId) {
+  public List<SnippetSendDTO> getAllSnippets(String userId) {
     List<CodeSnippet> codeSnippets = codeSnippetRepository.findAll();
 
-    List<CodeSnippetDTO> codeSnippetDTOS = codeSnippets.stream()
+    List<SnippetSendDTO> codeSnippetDTOS = codeSnippets.stream()
             .filter(codeSnippet -> canReadSnippet(userId, codeSnippet.getId()))
             .map(codeSnippet -> {
               InputStream assetResponse = getAsset(codeSnippet.getAssetId());
               MultipartFile asset = toMultipartFile(assetResponse, codeSnippet.getAssetId());
 
-              return convertToDTO(codeSnippet, asset);
+              return convertToSnippetSendDTO(codeSnippet, asset);
             })
             .collect(Collectors.toList());
 
     return codeSnippetDTOS;
   }
 
-  public String updateSnippet(String assetId, String userId, CodeSnippetDTO codeSnippet) {
+  public String updateSnippet(String assetId, String userId, SnippetReceivedDTO codeSnippet) {
     boolean canAccess = canWriteSnippet(userId, assetId);
     if (!canAccess) {
       throw new PermissionDeniedDataAccessException("You don't have permission to write this snippet", new Exception("You don't have permission to write this snippet"));
@@ -117,8 +120,8 @@ public class CodeSnippetService {
     return "Snippet deleted successfully";
   }
 
-  // Internal methods
-  private CodeSnippet createAndSaveCodeSnippet(CodeSnippetDTO snippet) {
+  // ** Internal methods
+  private CodeSnippet createAndSaveCodeSnippet(SnippetReceivedDTO snippet) {
     CodeSnippet codeSnippet = new CodeSnippet();
     codeSnippet.setAssetId(snippet.getAssetId());
     codeSnippet.setLanguage(snippet.getLanguageInEnum());
@@ -127,18 +130,29 @@ public class CodeSnippetService {
     return codeSnippet;
   }
 
-  private CodeSnippetDTO convertToDTO(CodeSnippet codeSnippets, MultipartFile content) {
-    return CodeSnippetDTO.builder()
+  private SnippetSendDTO convertToSnippetSendDTO(CodeSnippet codeSnippets, MultipartFile content) {
+    return SnippetSendDTO.builder()
             .language(codeSnippets.getLanguage().name())
             .version(codeSnippets.getVersion())
             .assetId(codeSnippets.getAssetId())
-            .content(content)
+            .content(getContentFromMultipartFile(content))
             .build();
   }
 
-  private CodeSnippet findSnippetById(String snippetId) {
-    return codeSnippetRepository.findById(snippetId)
-            .orElseThrow(() -> new EntityNotFoundException("Snippet not found with id " + snippetId));
+  private String getContentFromMultipartFile(MultipartFile content) {
+    try {
+      return new String(content.getBytes());
+    } catch (IOException e) {
+      throw new RuntimeException("Error reading the file content", e);
+    }
+  }
+
+  private MultipartFile toMultipartFile(InputStream assetResponse, String fileName) {
+    try{
+      return new MockMultipartFile(fileName, assetResponse);
+    } catch (IOException e) {
+      throw new RuntimeException("Error reading the file content: " + fileName, e);
+    }
   }
 
   private CodeSnippet findSnippetByAssetId(String assetId) {
@@ -148,7 +162,7 @@ public class CodeSnippetService {
 
   // ** Printscript manager
 
-  private void compileSnippet(CodeSnippetDTO snippet) {
+  private void compileSnippet(SnippetReceivedDTO snippet) {
     ResponseEntity<String> compileSnippetResponse = printscriptManager.compile(snippet.getContentInString(), snippet.getLanguageInEnum(), snippet.getVersion());
     if (compileSnippetResponse.getStatusCode().isError()) {
       throw new HttpServerErrorException(compileSnippetResponse.getStatusCode());
@@ -179,23 +193,15 @@ public class CodeSnippetService {
 
   // ** Asset manager
 
-  private ResponseEntity<String> createNewAsset(CodeSnippetDTO snippet) {
-    return assetManager.createAsset("snippets", snippet.getAssetId(), snippet.getContent());
+  private ResponseEntity<String> createNewAsset(SnippetReceivedDTO snippet) {
+    return assetManager.createAsset(assetManagerContainer, snippet.getAssetId(), snippet.getContent());
   }
 
   private InputStream getAsset(String assetId) {
-    return assetManager.getAsset("snippets", assetId);
+    return assetManager.getAsset(assetManagerContainer, assetId);
   }
 
   private ResponseEntity<String> deleteAsset(String snippetId) {
-    return assetManager.deleteAsset("snippets", snippetId);
-  }
-
-  private MultipartFile toMultipartFile(InputStream assetResponse, String fileName) {
-    try{
-      return new MockMultipartFile(fileName, assetResponse);
-    } catch (IOException e) {
-      throw new RuntimeException("Error reading the file content: " + fileName, e);
-    }
+    return assetManager.deleteAsset(assetManagerContainer, snippetId);
   }
 }

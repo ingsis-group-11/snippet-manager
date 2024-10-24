@@ -7,11 +7,10 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import snippet_manager.snippet.model.dtos.CodeSnippetDTO;
+import snippet_manager.snippet.model.dtos.SnippetReceivedDTO;
 import snippet_manager.snippet.services.CodeSnippetService;
 
 import java.util.List;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/snippet")
@@ -34,7 +33,7 @@ public class CodeSnippetController {
                                               @RequestParam("version") String version,
                                               @RequestParam("name") String fileName,
                                               @RequestParam("language") String language) {
-    CodeSnippetDTO snippet = CodeSnippetDTO.builder()
+    SnippetReceivedDTO snippet = SnippetReceivedDTO.builder()
             .content(file)
             .assetId(fileName)
             .language(language)
@@ -45,13 +44,13 @@ public class CodeSnippetController {
 
   //GET http://localhost:8080/api/snippet/{snippetId}
   @GetMapping("/{snippetId}")
-  public ResponseEntity<CodeSnippetDTO> getSnippet(@PathVariable String snippetId) {
+  public ResponseEntity<SnippetReceivedDTO> getSnippet(@PathVariable String snippetId) {
     return ResponseEntity.ok(codeSnippetService.getSnippet(snippetId, getUserId()));
   }
 
   //GET http://localhost:8080/api/snippet/
   @GetMapping
-  public ResponseEntity<List<CodeSnippetDTO>> getAllSnippets() {
+  public ResponseEntity<List<SnippetReceivedDTO>> getAllSnippets() {
     return ResponseEntity.ok(codeSnippetService.getAllSnippets(getUserId()));
   }
 
@@ -62,7 +61,7 @@ public class CodeSnippetController {
                                               @RequestParam("name") String fileName,
                                               @RequestParam("version") String version,
                                               @RequestParam("language") String language) {
-    CodeSnippetDTO snippet = CodeSnippetDTO.builder()
+    SnippetReceivedDTO snippet = SnippetReceivedDTO.builder()
             .content(file)
             .assetId(fileName)
             .language(language)

@@ -13,7 +13,7 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.multipart.MultipartFile;
-import snippet_manager.snippet.model.dtos.CodeSnippetDTO;
+import snippet_manager.snippet.model.dtos.SnippetReceivedDTO;
 import snippet_manager.snippet.services.CodeSnippetService;
 
 import java.nio.charset.StandardCharsets;
@@ -56,20 +56,20 @@ public class SnippetControllerTest {
     String language = "Java";
     String expectedResponse = "Snippet created successfully";
 
-    when(codeSnippetService.createSnippet(any(CodeSnippetDTO.class), eq(userId))).thenReturn(expectedResponse);
+    when(codeSnippetService.createSnippet(any(SnippetReceivedDTO.class), eq(userId))).thenReturn(expectedResponse);
 
     ResponseEntity<String> response = codeSnippetController.createSnippet(file, version, title, language);
 
     assertEquals(HttpStatus.OK, response.getStatusCode());
     assertEquals(expectedResponse, response.getBody());
-    verify(codeSnippetService).createSnippet(any(CodeSnippetDTO.class), eq(userId));
+    verify(codeSnippetService).createSnippet(any(SnippetReceivedDTO.class), eq(userId));
   }
 
   @Test
   void getSnippet() {
     String snippetId = UUID.randomUUID().toString();
     String userId = "1";
-    CodeSnippetDTO snippetDTO = CodeSnippetDTO.builder()
+    SnippetReceivedDTO snippetDTO = SnippetReceivedDTO.builder()
             .version("1.0")
             .language("Java")
             .content(mockMultipartFile("example content"))
@@ -77,7 +77,7 @@ public class SnippetControllerTest {
 
     when(codeSnippetService.getSnippet(snippetId, userId)).thenReturn(snippetDTO);
 
-    ResponseEntity<CodeSnippetDTO> response = codeSnippetController.getSnippet(snippetId);
+    ResponseEntity<SnippetReceivedDTO> response = codeSnippetController.getSnippet(snippetId);
 
     assertEquals(HttpStatus.OK, response.getStatusCode());
     assertEquals(snippetDTO, response.getBody());
@@ -87,14 +87,14 @@ public class SnippetControllerTest {
   @Test
   void getAllSnippets() {
     String userId = "1";
-    List<CodeSnippetDTO> snippets = Arrays.asList(
-            CodeSnippetDTO.builder().build(),
-            CodeSnippetDTO.builder().build()
+    List<SnippetReceivedDTO> snippets = Arrays.asList(
+            SnippetReceivedDTO.builder().build(),
+            SnippetReceivedDTO.builder().build()
     );
 
     when(codeSnippetService.getAllSnippets(userId)).thenReturn(snippets);
 
-    ResponseEntity<List<CodeSnippetDTO>> response = codeSnippetController.getAllSnippets();
+    ResponseEntity<List<SnippetReceivedDTO>> response = codeSnippetController.getAllSnippets();
 
     assertEquals(HttpStatus.OK, response.getStatusCode());
     assertEquals(snippets, response.getBody());
@@ -111,13 +111,13 @@ public class SnippetControllerTest {
     String language = "PRINTSCRIPT";
     String expectedResponse = "Snippet updated successfully";
 
-    when(codeSnippetService.updateSnippet(eq(snippetId), eq(userId), any(CodeSnippetDTO.class))).thenReturn(expectedResponse);
+    when(codeSnippetService.updateSnippet(eq(snippetId), eq(userId), any(SnippetReceivedDTO.class))).thenReturn(expectedResponse);
 
     ResponseEntity<String> response = codeSnippetController.updateSnippet(snippetId, file, title, version, language);
 
     assertEquals(HttpStatus.OK, response.getStatusCode());
     assertEquals(expectedResponse, response.getBody());
-    verify(codeSnippetService).updateSnippet(eq(snippetId), eq(userId), any(CodeSnippetDTO.class));
+    verify(codeSnippetService).updateSnippet(eq(snippetId), eq(userId), any(SnippetReceivedDTO.class));
   }
 
   @Test

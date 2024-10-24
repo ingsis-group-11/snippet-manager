@@ -12,7 +12,7 @@ import java.nio.charset.StandardCharsets;
 @Builder
 @Getter
 @Setter
-public class CodeSnippetDTO {
+public class SnippetReceivedDTO {
   private String assetId;
   private String language;
   private String version;

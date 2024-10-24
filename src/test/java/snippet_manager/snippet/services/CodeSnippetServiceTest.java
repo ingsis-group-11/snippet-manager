@@ -17,7 +17,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Mono;
-import snippet_manager.snippet.model.dtos.CodeSnippetDTO;
+import snippet_manager.snippet.model.dtos.SnippetReceivedDTO;
 import snippet_manager.snippet.model.dtos.webservice.PermissionDTO;
 import snippet_manager.snippet.model.entities.CodeSnippet;
 import snippet_manager.snippet.webservice.asset.AssetManager;
@@ -72,7 +72,7 @@ class CodeSnippetServiceTest {
     MultipartFile contentFile = mockMultipartFile("test content");
     String snippetId = "snippet-test";
 
-    CodeSnippetDTO snippetDTO = CodeSnippetDTO.builder()
+    SnippetReceivedDTO snippetDTO = SnippetReceivedDTO.builder()
             .assetId(snippetId)
             .language("PRINTSCRIPT")
             .version("1.1")
@@ -105,7 +105,7 @@ class CodeSnippetServiceTest {
   void createSnippetPermissionError() {
     MultipartFile contentFile = mockMultipartFile("test content");
 
-    CodeSnippetDTO snippetDTO = CodeSnippetDTO.builder()
+    SnippetReceivedDTO snippetDTO = SnippetReceivedDTO.builder()
             .content(contentFile)
             .language("PRINTSCRIPT")
             .version("1.1")
@@ -146,7 +146,7 @@ class CodeSnippetServiceTest {
     when(codeSnippetRepository.findCodeSnippetByAssetId(eq(assetId))).thenReturn(Optional.of(codeSnippet));
     when(assetManager.getAsset(eq("snippets"), eq(assetId))).thenReturn(new ByteArrayInputStream("test content".getBytes()));
 
-    CodeSnippetDTO result = codeSnippetService.getSnippet(assetId, userId);
+    SnippetReceivedDTO result = codeSnippetService.getSnippet(assetId, userId);
 
     assertEquals(assetId, result.getAssetId());
     assertEquals("PRINTSCRIPT", result.getLanguage());
@@ -191,7 +191,7 @@ class CodeSnippetServiceTest {
 
     when(codeSnippetRepository.findCodeSnippetByAssetId(assetId)).thenReturn(Optional.of(existingSnippet));
 
-    CodeSnippetDTO snippetDTO = CodeSnippetDTO.builder()
+    SnippetReceivedDTO snippetDTO = SnippetReceivedDTO.builder()
             .language("PRINTSCRIPT")
             .version("1.1")
             .content(mockMultipartFile("test content"))
@@ -220,7 +220,7 @@ class CodeSnippetServiceTest {
     String snippetId = UUID.randomUUID().toString();
     String userId = "1";
 
-    CodeSnippetDTO snippetDTO = CodeSnippetDTO.builder()
+    SnippetReceivedDTO snippetDTO = SnippetReceivedDTO.builder()
             .language("PRINTSCRIPT")
             .version("1.1")
             .build();

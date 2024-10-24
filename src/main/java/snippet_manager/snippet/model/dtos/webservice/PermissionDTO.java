@@ -10,6 +10,6 @@ import snippet_manager.snippet.util.PermissionType;
 @Setter
 public class PermissionDTO {
   private String userId;
-  private String snippetId;
+  private String assetId;
   private PermissionType permission;
 }

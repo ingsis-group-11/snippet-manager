@@ -24,7 +24,7 @@ public class PermissionManager {
 
   public boolean canRead(String userId, String snippetId) {
     PermissionDTO body = PermissionDTO.builder()
-            .snippetId(snippetId)
+            .assetId(snippetId)
             .userId(userId)
             .permission(PermissionType.READ)
             .build();
@@ -34,7 +34,7 @@ public class PermissionManager {
 
   public boolean canWrite(String userId, String snippetId) {
     PermissionDTO body = PermissionDTO.builder()
-            .snippetId(snippetId)
+            .assetId(snippetId)
             .userId(userId)
             .permission(PermissionType.READ_WRITE)
             .build();
@@ -43,30 +43,24 @@ public class PermissionManager {
   }
 
   public ResponseEntity<String> createNewPermission(String userId, String snippetId){
-    if(permissionManagerUrl == null || permissionManagerUrl.isEmpty()){
-      permissionManagerUrl = "http://localhost:8081";
-    }
     PermissionDTO permissionDTO = PermissionDTO.builder()
-            .snippetId(snippetId)
+            .assetId(snippetId)
             .userId(userId)
             .build();
-    String url = permissionManagerUrl + "/api/permission/new-permision";
-    Mono<ResponseEntity<String>> response = webClientUtility.postAsync(url, permissionDTO, String.class);
+    String url = permissionManagerUrl + "/api/permission/";
+    Mono<ResponseEntity<String>> response = webClientUtility.putAsync(url, permissionDTO, String.class);
     return response.block(Duration.ofSeconds(timeOutInSeconds));
   }
 
   public ResponseEntity<String> deletePermission(String userId, String snippetId){
-    if(permissionManagerUrl == null || permissionManagerUrl.isEmpty()){
-      permissionManagerUrl = "http://localhost:8081";
-    }
-    String url = permissionManagerUrl + "/api/permission/";
+    String url = permissionManagerUrl + "/api/permission/" + "user/" + userId + "/" + snippetId;
     Mono<ResponseEntity<String>> response = webClientUtility.deleteAsync(url, String.class);
     return response.block(Duration.ofSeconds(timeOutInSeconds));
   }
 
   public boolean canDelete(String userId, String snippetId) {
     PermissionDTO body = PermissionDTO.builder()
-            .snippetId(snippetId)
+            .assetId(snippetId)
             .userId(userId)
             .permission(PermissionType.DELETE)
             .build();
