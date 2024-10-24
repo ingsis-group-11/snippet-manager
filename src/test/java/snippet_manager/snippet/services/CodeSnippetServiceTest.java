@@ -18,6 +18,7 @@ import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Mono;
 import snippet_manager.snippet.model.dtos.SnippetReceivedDTO;
+import snippet_manager.snippet.model.dtos.SnippetSendDTO;
 import snippet_manager.snippet.model.dtos.webservice.PermissionDTO;
 import snippet_manager.snippet.model.entities.CodeSnippet;
 import snippet_manager.snippet.webservice.asset.AssetManager;
@@ -25,6 +26,7 @@ import snippet_manager.snippet.webservice.permission.PermissionManager;
 import snippet_manager.snippet.repositories.CodeSnippetRepository;
 import snippet_manager.snippet.util.CodeLanguage;
 import snippet_manager.snippet.webservice.WebClientUtility;
+import snippet_manager.snippet.webservice.printscript.PrintscriptManager;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
@@ -48,6 +50,9 @@ class CodeSnippetServiceTest {
 
   @Mock
   private AssetManager assetManager;
+
+  @Mock
+  private PrintscriptManager printscriptManager;
 
   @InjectMocks
   private CodeSnippetService codeSnippetService;
@@ -94,6 +99,9 @@ class CodeSnippetServiceTest {
     when(permissionManager.createNewPermission(any(String.class), eq(snippetId)))
             .thenReturn(new ResponseEntity<>("Permission granted", HttpStatus.OK));
 
+    when(printscriptManager.compile(eq(snippetDTO.getContentInString()), eq(snippetDTO.getLanguageInEnum()), eq(snippetDTO.getVersion())))
+            .thenReturn(new ResponseEntity<>("Snippet compiled successfully", HttpStatus.OK));
+
     String response = codeSnippetService.createSnippet(snippetDTO, "1");
 
     assertEquals("Snippet created successfully", response);
@@ -126,6 +134,9 @@ class CodeSnippetServiceTest {
     when(permissionManager.createNewPermission(any(String.class), eq(snippetId)))
             .thenReturn(new ResponseEntity<>("Permission error", HttpStatus.INTERNAL_SERVER_ERROR));
 
+    when(printscriptManager.compile(eq(snippetDTO.getContentInString()), eq(snippetDTO.getLanguageInEnum()), eq(snippetDTO.getVersion())))
+            .thenReturn(new ResponseEntity<>("Snippet compiled successfully", HttpStatus.OK));
+
     assertThrows(HttpServerErrorException.class, () -> {
       codeSnippetService.createSnippet(snippetDTO, "1");
     });
@@ -146,7 +157,7 @@ class CodeSnippetServiceTest {
     when(codeSnippetRepository.findCodeSnippetByAssetId(eq(assetId))).thenReturn(Optional.of(codeSnippet));
     when(assetManager.getAsset(eq("snippets"), eq(assetId))).thenReturn(new ByteArrayInputStream("test content".getBytes()));
 
-    SnippetReceivedDTO result = codeSnippetService.getSnippet(assetId, userId);
+    SnippetSendDTO result = codeSnippetService.getSnippet(assetId, userId);
 
     assertEquals(assetId, result.getAssetId());
     assertEquals("PRINTSCRIPT", result.getLanguage());

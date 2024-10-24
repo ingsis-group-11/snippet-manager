@@ -14,6 +14,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.multipart.MultipartFile;
 import snippet_manager.snippet.model.dtos.SnippetReceivedDTO;
+import snippet_manager.snippet.model.dtos.SnippetSendDTO;
 import snippet_manager.snippet.services.CodeSnippetService;
 
 import java.nio.charset.StandardCharsets;
@@ -69,15 +70,15 @@ public class SnippetControllerTest {
   void getSnippet() {
     String snippetId = UUID.randomUUID().toString();
     String userId = "1";
-    SnippetReceivedDTO snippetDTO = SnippetReceivedDTO.builder()
+    SnippetSendDTO snippetDTO = SnippetSendDTO.builder()
             .version("1.0")
             .language("Java")
-            .content(mockMultipartFile("example content"))
+            .content("example content")
             .build();
 
     when(codeSnippetService.getSnippet(snippetId, userId)).thenReturn(snippetDTO);
 
-    ResponseEntity<SnippetReceivedDTO> response = codeSnippetController.getSnippet(snippetId);
+    ResponseEntity<SnippetSendDTO> response = codeSnippetController.getSnippet(snippetId);
 
     assertEquals(HttpStatus.OK, response.getStatusCode());
     assertEquals(snippetDTO, response.getBody());
@@ -87,14 +88,14 @@ public class SnippetControllerTest {
   @Test
   void getAllSnippets() {
     String userId = "1";
-    List<SnippetReceivedDTO> snippets = Arrays.asList(
-            SnippetReceivedDTO.builder().build(),
-            SnippetReceivedDTO.builder().build()
+    List<SnippetSendDTO> snippets = Arrays.asList(
+            SnippetSendDTO.builder().build(),
+            SnippetSendDTO.builder().build()
     );
 
     when(codeSnippetService.getAllSnippets(userId)).thenReturn(snippets);
 
-    ResponseEntity<List<SnippetReceivedDTO>> response = codeSnippetController.getAllSnippets();
+    ResponseEntity<List<SnippetSendDTO>> response = codeSnippetController.getAllSnippets();
 
     assertEquals(HttpStatus.OK, response.getStatusCode());
     assertEquals(snippets, response.getBody());

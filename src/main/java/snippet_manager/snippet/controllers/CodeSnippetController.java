@@ -8,6 +8,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import snippet_manager.snippet.model.dtos.SnippetReceivedDTO;
+import snippet_manager.snippet.model.dtos.SnippetSendDTO;
 import snippet_manager.snippet.services.CodeSnippetService;
 
 import java.util.List;
@@ -44,13 +45,13 @@ public class CodeSnippetController {
 
   //GET http://localhost:8080/api/snippet/{snippetId}
   @GetMapping("/{snippetId}")
-  public ResponseEntity<SnippetReceivedDTO> getSnippet(@PathVariable String snippetId) {
+  public ResponseEntity<SnippetSendDTO> getSnippet(@PathVariable String snippetId) {
     return ResponseEntity.ok(codeSnippetService.getSnippet(snippetId, getUserId()));
   }
 
   //GET http://localhost:8080/api/snippet/
   @GetMapping
-  public ResponseEntity<List<SnippetReceivedDTO>> getAllSnippets() {
+  public ResponseEntity<List<SnippetSendDTO>> getAllSnippets() {
     return ResponseEntity.ok(codeSnippetService.getAllSnippets(getUserId()));
   }
 
