@@ -2,6 +2,8 @@ plugins {
 	id 'java'
 	id 'org.springframework.boot' version '3.3.4'
 	id 'io.spring.dependency-management' version '1.1.6'
+    id 'com.diffplug.spotless' version '6.25.0'
+    id 'checkstyle'
 }
 
 group = 'snippet-manager'
@@ -11,6 +13,15 @@ java {
 	toolchain {
 		languageVersion = JavaLanguageVersion.of(21)
 	}
+}
+
+allprojects {
+    apply plugin: 'checkstyle'
+    checkstyle {
+        toolVersion = '10.18.0'
+        configFile = file("${rootProject.projectDir}/config/checkstyle/google_checks.xml")
+        maxWarnings = 0
+    }
 }
 
 configurations {
@@ -43,4 +54,15 @@ dependencies {
 
 tasks.named('test') {
 	useJUnitPlatform()
+}
+
+tasks.named('build') {
+    dependsOn 'spotlessApply'
+}
+
+spotless {
+    java {
+        googleJavaFormat()
+        target 'src/**/*.java'
+    }
 }
