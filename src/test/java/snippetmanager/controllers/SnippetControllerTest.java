@@ -1,7 +1,11 @@
 package snippetmanager.controllers;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -69,15 +73,15 @@ public class SnippetControllerTest {
   void getSnippet() {
     String snippetId = UUID.randomUUID().toString();
     String userId = "1";
-    SnippetSendDto snippetDTO =
+    SnippetSendDto snippetDto =
         SnippetSendDto.builder().version("1.0").language("Java").content("example content").build();
 
-    when(codeSnippetService.getSnippet(snippetId, userId)).thenReturn(snippetDTO);
+    when(codeSnippetService.getSnippet(snippetId, userId)).thenReturn(snippetDto);
 
     ResponseEntity<SnippetSendDto> response = codeSnippetController.getSnippet(snippetId);
 
     assertEquals(HttpStatus.OK, response.getStatusCode());
-    assertEquals(snippetDTO, response.getBody());
+    assertEquals(snippetDto, response.getBody());
     verify(codeSnippetService).getSnippet(snippetId, userId);
   }
 
