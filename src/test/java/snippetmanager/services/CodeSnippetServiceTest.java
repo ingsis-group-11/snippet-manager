@@ -1,14 +1,19 @@
 package snippetmanager.services;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import jakarta.persistence.EntityNotFoundException;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -70,7 +75,7 @@ class CodeSnippetServiceTest {
     MultipartFile contentFile = mockMultipartFile("test content");
     String snippetId = "snippet-test";
 
-    SnippetReceivedDto snippetDTO =
+    SnippetReceivedDto snippetDto =
         SnippetReceivedDto.builder()
             .assetId(snippetId)
             .language("PRINTSCRIPT")
@@ -98,12 +103,12 @@ class CodeSnippetServiceTest {
         .thenReturn(new ResponseEntity<>("Permission granted", HttpStatus.OK));
 
     when(printscriptManager.compile(
-            eq(snippetDTO.getContentInString()),
-            eq(snippetDTO.getLanguageInEnum()),
-            eq(snippetDTO.getVersion())))
+            eq(snippetDto.getContentInString()),
+            eq(snippetDto.getLanguageInEnum()),
+            eq(snippetDto.getVersion())))
         .thenReturn(new ResponseEntity<>("Snippet compiled successfully", HttpStatus.OK));
 
-    String response = codeSnippetService.createSnippet(snippetDTO, "1");
+    String response = codeSnippetService.createSnippet(snippetDto, "1");
 
     assertEquals("Snippet created successfully", response);
   }
@@ -112,7 +117,7 @@ class CodeSnippetServiceTest {
   void createSnippetPermissionError() {
     MultipartFile contentFile = mockMultipartFile("test content");
 
-    SnippetReceivedDto snippetDTO =
+    SnippetReceivedDto snippetDto =
         SnippetReceivedDto.builder()
             .content(contentFile)
             .language("PRINTSCRIPT")
@@ -138,15 +143,15 @@ class CodeSnippetServiceTest {
         .thenReturn(new ResponseEntity<>("Permission error", HttpStatus.INTERNAL_SERVER_ERROR));
 
     when(printscriptManager.compile(
-            eq(snippetDTO.getContentInString()),
-            eq(snippetDTO.getLanguageInEnum()),
-            eq(snippetDTO.getVersion())))
+            eq(snippetDto.getContentInString()),
+            eq(snippetDto.getLanguageInEnum()),
+            eq(snippetDto.getVersion())))
         .thenReturn(new ResponseEntity<>("Snippet compiled successfully", HttpStatus.OK));
 
     assertThrows(
         HttpServerErrorException.class,
         () -> {
-          codeSnippetService.createSnippet(snippetDTO, "1");
+          codeSnippetService.createSnippet(snippetDto, "1");
         });
   }
 
@@ -217,7 +222,7 @@ class CodeSnippetServiceTest {
     when(codeSnippetRepository.findCodeSnippetByAssetId(assetId))
         .thenReturn(Optional.of(existingSnippet));
 
-    SnippetReceivedDto snippetDTO =
+    SnippetReceivedDto snippetDto =
         SnippetReceivedDto.builder()
             .language("PRINTSCRIPT")
             .version("1.1")
@@ -237,7 +242,7 @@ class CodeSnippetServiceTest {
     when(assetManager.createAsset(eq("snippets"), eq(assetId), any(MultipartFile.class)))
         .thenReturn(new ResponseEntity<>("Asset updated", HttpStatus.OK));
 
-    String response = codeSnippetService.updateSnippet(assetId, userId, snippetDTO);
+    String response = codeSnippetService.updateSnippet(assetId, userId, snippetDto);
 
     assertEquals("Snippet updated successfully", response);
 
@@ -249,7 +254,7 @@ class CodeSnippetServiceTest {
     String snippetId = UUID.randomUUID().toString();
     String userId = "1";
 
-    SnippetReceivedDto snippetDTO =
+    SnippetReceivedDto snippetDto =
         SnippetReceivedDto.builder().language("PRINTSCRIPT").version("1.1").build();
 
     when(permissionManager.canWrite(eq(userId), eq(snippetId))).thenReturn(true);
@@ -258,7 +263,7 @@ class CodeSnippetServiceTest {
     assertThrows(
         EntityNotFoundException.class,
         () -> {
-          codeSnippetService.updateSnippet(snippetId, userId, snippetDTO);
+          codeSnippetService.updateSnippet(snippetId, userId, snippetDto);
         });
   }
 
