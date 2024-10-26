@@ -1,13 +1,12 @@
 package snippetmanager.services;
 
+import java.util.List;
+import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import snippetmanager.model.dtos.RuleDto;
 import snippetmanager.model.entities.FormatterRule;
 import snippetmanager.repositories.FormatterRuleRepository;
-
-import java.util.List;
-import java.util.Optional;
 
 @Service
 public class FormatterRuleService {

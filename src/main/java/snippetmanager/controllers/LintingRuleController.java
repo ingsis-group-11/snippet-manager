@@ -1,15 +1,18 @@
 package snippetmanager.controllers;
 
+import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 import snippetmanager.model.dtos.RuleDto;
 import snippetmanager.services.LintingRuleService;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/linting-rule")
@@ -24,8 +27,7 @@ public class LintingRuleController {
   }
 
   @PutMapping
-  public ResponseEntity<String> createOrUpdateRules(
-          @RequestBody List<RuleDto> rules) {
+  public ResponseEntity<String> createOrUpdateRules(@RequestBody List<RuleDto> rules) {
     return ResponseEntity.ok(lintingRuleService.createOrUpdateRules(rules, getUserId()));
   }
 
