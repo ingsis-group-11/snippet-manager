@@ -1,9 +1,8 @@
 package snippetmanager.services;
 
+import jakarta.transaction.Transactional;
 import java.util.List;
 import java.util.Optional;
-
-import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
@@ -22,16 +21,16 @@ public class LintingRuleService {
 
   @Autowired
   public LintingRuleService(LintProducerInterface lintProducer) {
-      this.lintProducer = lintProducer;
+    this.lintProducer = lintProducer;
   }
 
-    @Transactional
+  @Transactional
   public String createOrUpdateRules(List<RuleDto> rules, String userId) {
     for (RuleDto ruleDto : rules) {
       Optional<LintingRule> rule = searchRule(ruleDto.getName(), userId);
       if (rule.isPresent()) {
         rule.get().setValue(ruleDto.getValue());
-        try{
+        try {
           lintingRuleRepository.save(rule.get());
         } catch (Exception e) {
           TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
@@ -46,9 +45,12 @@ public class LintingRuleService {
   }
 
   private void publishAllSnippetsToRedis(String userId) {
-    codeSnippetService.getAllSnippets(userId).forEach(snippet -> {
-      lintProducer.publishEvent(snippet.getAssetId());
-    });
+    codeSnippetService
+        .getAllSnippets(userId)
+        .forEach(
+            snippet -> {
+              lintProducer.publishEvent(snippet.getAssetId());
+            });
   }
 
   private void createAndSaveRule(String userId, RuleDto ruleDto) {

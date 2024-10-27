@@ -43,7 +43,6 @@ public class CodeSnippetService {
             });
     CodeSnippet codeSnippet = createAndSaveCodeSnippet(snippet);
 
-
     ResponseEntity<String> permissionResponse = createNewPermission(userId, codeSnippet.getId());
     if (permissionResponse.getStatusCode().isError()) {
       codeSnippetRepository.deleteById(codeSnippet.getId());
@@ -73,7 +72,8 @@ public class CodeSnippetService {
     MultipartFile snippetContent = toMultipartFile(assetResponse, assetId);
     SnippetSendDto snippetDto = convertToSnippetSendDto(codeSnippet, snippetContent);
     snippetDto.setUserId(userId);
-    return snippetDto;  }
+    return snippetDto;
+  }
 
   public List<SnippetSendDto> getAllSnippets(String userId) {
     List<CodeSnippet> codeSnippets = getAllCanReadSnippets(userId);
@@ -151,9 +151,10 @@ public class CodeSnippetService {
   }
 
   private List<CodeSnippet> getAllCanReadSnippets(String userId) {
-    return Objects.requireNonNull(permissionManager.getSnippetsUserCanRead(userId).getBody()).stream()
-            .map(this::findSnippetByAssetId)
-            .collect(Collectors.toList());
+    return Objects.requireNonNull(permissionManager.getSnippetsUserCanRead(userId).getBody())
+        .stream()
+        .map(this::findSnippetByAssetId)
+        .collect(Collectors.toList());
   }
 
   private String getContentFromMultipartFile(MultipartFile content) {

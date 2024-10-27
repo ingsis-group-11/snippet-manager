@@ -2,7 +2,6 @@ package snippetmanager.webservice;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferUtils;
@@ -76,7 +75,8 @@ public class WebClientUtility {
         .toEntity(responseType);
   }
 
-  public <T> Mono<ResponseEntity<T>> getAsync(String url, ParameterizedTypeReference<T> responseType) {
+  public <T> Mono<ResponseEntity<T>> getAsync(
+      String url, ParameterizedTypeReference<T> responseType) {
     return webClient.get().uri(url).retrieve().toEntity(responseType);
   }
 
