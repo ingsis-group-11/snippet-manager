@@ -1,3 +1,4 @@
+# Spring Boot application configuration
 spring:
   application:
     name: back
@@ -19,6 +20,7 @@ spring:
         jwt:
           issuer-uri: ${AUTH_SERVER_URI}
 
+# Configurations for the services
 permission:
   manager:
     url: ${PERMISSION_MANAGER_URL:http://localhost:8003}
@@ -34,10 +36,19 @@ asset:
 auth0:
   audience: ${AUTH0_AUDIENCE}
 
+# Redis configuration
+redis:
+  host: localhost
+  port: 6379
+
+stream:
+  key:
+    lint: "lint"
+
+# logging:
+#  level:
+#    org.springframework.web: DEBUG
+#    org.springframework.security: DEBUG
+
 server:
   port: ${DOCKER_PORT:8000}
-
-logging:
-  level:
-    org.springframework.web: DEBUG
-    org.springframework.security: DEBUG

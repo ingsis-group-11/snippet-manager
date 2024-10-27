@@ -2,30 +2,53 @@ package snippetmanager.services;
 
 import java.util.List;
 import java.util.Optional;
+
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import snippetmanager.model.dtos.RuleDto;
 import snippetmanager.model.entities.LintingRule;
+import snippetmanager.redis.LintProducerInterface;
 import snippetmanager.repositories.LintingRuleRepository;
 
 @Service
 public class LintingRuleService {
   @Autowired private LintingRuleRepository lintingRuleRepository;
 
+  @Autowired private CodeSnippetService codeSnippetService;
+
+  private final LintProducerInterface lintProducer;
+
+  @Autowired
+  public LintingRuleService(LintProducerInterface lintProducer) {
+      this.lintProducer = lintProducer;
+  }
+
+    @Transactional
   public String createOrUpdateRules(List<RuleDto> rules, String userId) {
-    String response = "";
     for (RuleDto ruleDto : rules) {
       Optional<LintingRule> rule = searchRule(ruleDto.getName(), userId);
       if (rule.isPresent()) {
         rule.get().setValue(ruleDto.getValue());
-        lintingRuleRepository.save(rule.get());
-        response = "Rules updated successfully";
+        try{
+          lintingRuleRepository.save(rule.get());
+        } catch (Exception e) {
+          TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+          return "Error updating rules";
+        }
       } else {
         createAndSaveRule(userId, ruleDto);
-        response = "Rules created successfully";
       }
     }
-    return response;
+    publishAllSnippetsToRedis(userId);
+    return "Success updating rules";
+  }
+
+  private void publishAllSnippetsToRedis(String userId) {
+    codeSnippetService.getAllSnippets(userId).forEach(snippet -> {
+      lintProducer.publishEvent(snippet.getAssetId());
+    });
   }
 
   private void createAndSaveRule(String userId, RuleDto ruleDto) {

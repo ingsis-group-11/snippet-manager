@@ -1,12 +1,16 @@
 package snippetmanager.webservice.permission;
 
 import java.time.Duration;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
+import snippetmanager.model.dtos.SnippetReceivedDto;
 import snippetmanager.model.dtos.webservice.PermissionDto;
 import snippetmanager.util.PermissionType;
 import snippetmanager.webservice.WebClientUtility;
@@ -40,6 +44,12 @@ public class PermissionManager {
             .build();
 
     return fetchPermissionData(body);
+  }
+
+  public ResponseEntity<List<String>> getSnippetsUserCanRead(String userId) {
+    String url = permissionManagerUrl + "/api/permission/" + "user/" + userId;
+    Mono<ResponseEntity<List<String>>> response = webClientUtility.getAsync(url, new ParameterizedTypeReference<List<String>>() {});
+    return response.block(Duration.ofSeconds(timeOutInSeconds));
   }
 
   public ResponseEntity<String> createNewPermission(String userId, String snippetId) {
