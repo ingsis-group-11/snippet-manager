@@ -1,12 +1,10 @@
 package snippetmanager.model.dtos;
 
 import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 
+@Data
 @Builder
-@Getter
-@Setter
 public class SnippetSendDto {
   private String assetId;
   private String language;

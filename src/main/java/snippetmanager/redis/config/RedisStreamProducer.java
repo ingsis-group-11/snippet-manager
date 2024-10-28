@@ -1,5 +1,6 @@
 package snippetmanager.redis.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Getter;
 import org.springframework.data.redis.connection.stream.RecordId;
 import org.springframework.data.redis.connection.stream.StreamRecords;
@@ -17,8 +18,12 @@ public abstract class RedisStreamProducer {
   }
 
   public <V> Mono<RecordId> emit(V value) {
-    var record = StreamRecords.newRecord().ofObject(value).withStreamKey(streamKey);
-
-    return redis.opsForStream().add(record);
+    try {
+      String json = new ObjectMapper().writeValueAsString(value);
+      var record = StreamRecords.newRecord().ofObject(json).withStreamKey(getStreamKey());
+      return redis.opsForStream().add(record);
+    } catch (Exception e) {
+      return Mono.error(e);
+    }
   }
 }

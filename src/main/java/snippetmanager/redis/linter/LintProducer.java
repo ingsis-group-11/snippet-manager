@@ -1,13 +1,15 @@
-package snippetmanager.redis;
+package snippetmanager.redis.linter;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.stereotype.Component;
+import snippetmanager.model.dtos.SnippetSendDto;
+import snippetmanager.redis.ProducerInterface;
 import snippetmanager.redis.config.RedisStreamProducer;
 
 @Component
-public class LintProducer extends RedisStreamProducer implements LintProducerInterface {
+public class LintProducer extends RedisStreamProducer implements ProducerInterface {
 
   @Autowired
   public LintProducer(
@@ -16,8 +18,8 @@ public class LintProducer extends RedisStreamProducer implements LintProducerInt
   }
 
   @Override
-  public void publishEvent(String name) {
+  public void publishEvent(SnippetSendDto snippetInfo) {
     System.out.println("Publishing on stream: " + getStreamKey());
-    emit(name).subscribe();
+    emit(snippetInfo).subscribe();
   }
 }

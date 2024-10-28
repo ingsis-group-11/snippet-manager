@@ -7,8 +7,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import snippetmanager.model.dtos.RuleDto;
+import snippetmanager.model.dtos.SnippetSendDto;
 import snippetmanager.model.entities.LintingRule;
-import snippetmanager.redis.LintProducerInterface;
+import snippetmanager.redis.linter.LintProducer;
 import snippetmanager.repositories.LintingRuleRepository;
 
 @Service
@@ -17,10 +18,10 @@ public class LintingRuleService {
 
   @Autowired private CodeSnippetService codeSnippetService;
 
-  private final LintProducerInterface lintProducer;
+  private final LintProducer lintProducer;
 
   @Autowired
-  public LintingRuleService(LintProducerInterface lintProducer) {
+  public LintingRuleService(LintProducer lintProducer) {
     this.lintProducer = lintProducer;
   }
 
@@ -49,7 +50,13 @@ public class LintingRuleService {
         .getAllSnippets(userId)
         .forEach(
             snippet -> {
-              lintProducer.publishEvent(snippet.getAssetId());
+              lintProducer.publishEvent(
+                  SnippetSendDto.builder()
+                      .assetId(snippet.getAssetId())
+                      .language(snippet.getLanguage())
+                      .version(snippet.getVersion())
+                      .userId(snippet.getUserId())
+                      .build());
             });
   }
 
