@@ -5,12 +5,24 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import snippetmanager.model.dtos.RuleDto;
+import snippetmanager.model.dtos.SnippetSendDto;
 import snippetmanager.model.entities.FormatterRule;
+import snippetmanager.redis.formatter.FormatterProducer;
+import snippetmanager.redis.linter.LintProducer;
 import snippetmanager.repositories.FormatterRuleRepository;
 
 @Service
 public class FormatterRuleService {
   @Autowired private FormatterRuleRepository formatterRuleRepository;
+
+  @Autowired private CodeSnippetService codeSnippetService;
+
+  private final FormatterProducer formatterProducer;
+
+  @Autowired
+  public FormatterRuleService(FormatterProducer formatterProducer) {
+    this.formatterProducer = formatterProducer;
+  }
 
   public String createOrUpdateRules(List<RuleDto> rules, String userId) {
     String response = "";
@@ -25,7 +37,23 @@ public class FormatterRuleService {
         response = "Rules created successfully";
       }
     }
+    publishAllSnippetsToRedis(userId);
     return response;
+  }
+
+  private void publishAllSnippetsToRedis(String userId) {
+    codeSnippetService
+            .getAllSnippets(userId)
+            .forEach(
+                    snippet -> {
+                      formatterProducer.publishEvent(
+                              SnippetSendDto.builder()
+                                      .assetId(snippet.getAssetId())
+                                      .language(snippet.getLanguage())
+                                      .version(snippet.getVersion())
+                                      .userId(snippet.getUserId())
+                                      .build());
+                    });
   }
 
   private void createAndSaveRule(String userId, RuleDto ruleDto) {

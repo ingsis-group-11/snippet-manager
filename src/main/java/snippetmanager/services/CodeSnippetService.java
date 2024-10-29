@@ -4,6 +4,7 @@ import jakarta.persistence.EntityNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.PermissionDeniedDataAccessException;
@@ -69,21 +70,24 @@ public class CodeSnippetService {
 
     InputStream assetResponse = getAsset(assetId);
     MultipartFile snippetContent = toMultipartFile(assetResponse, assetId);
-    return convertToSnippetSendDto(codeSnippet, snippetContent);
+    SnippetSendDto snippetDto = convertToSnippetSendDto(codeSnippet, snippetContent);
+    snippetDto.setUserId(userId);
+    return snippetDto;
   }
 
   public List<SnippetSendDto> getAllSnippets(String userId) {
-    List<CodeSnippet> codeSnippets = codeSnippetRepository.findAll();
+    List<CodeSnippet> codeSnippets = getAllCanReadSnippets(userId);
 
     List<SnippetSendDto> codeSnippetDtos =
         codeSnippets.stream()
-            .filter(codeSnippet -> canReadSnippet(userId, codeSnippet.getId()))
             .map(
                 codeSnippet -> {
                   InputStream assetResponse = getAsset(codeSnippet.getAssetId());
                   MultipartFile asset = toMultipartFile(assetResponse, codeSnippet.getAssetId());
 
-                  return convertToSnippetSendDto(codeSnippet, asset);
+                  SnippetSendDto snippetDto = convertToSnippetSendDto(codeSnippet, asset);
+                  snippetDto.setUserId(userId);
+                  return snippetDto;
                 })
             .collect(Collectors.toList());
 
@@ -144,6 +148,13 @@ public class CodeSnippetService {
         .assetId(codeSnippets.getAssetId())
         .content(getContentFromMultipartFile(content))
         .build();
+  }
+
+  private List<CodeSnippet> getAllCanReadSnippets(String userId) {
+    return Objects.requireNonNull(permissionManager.getSnippetsUserCanRead(userId).getBody())
+        .stream()
+        .map(this::findSnippetByAssetId)
+        .collect(Collectors.toList());
   }
 
   private String getContentFromMultipartFile(MultipartFile content) {
