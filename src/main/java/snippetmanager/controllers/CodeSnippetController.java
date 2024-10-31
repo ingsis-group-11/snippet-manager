@@ -49,9 +49,9 @@ public class CodeSnippetController {
   }
 
   // GET http://localhost:8080/api/snippet/{snippetId}
-  @GetMapping("/{snippetId}")
-  public ResponseEntity<SnippetSendDto> getSnippet(@PathVariable String snippetId) {
-    return ResponseEntity.ok(codeSnippetService.getSnippet(snippetId, getUserId()));
+  @GetMapping("/{assetId}")
+  public ResponseEntity<SnippetSendDto> getSnippet(@PathVariable String assetId) {
+    return ResponseEntity.ok(codeSnippetService.getSnippet(assetId, getUserId()));
   }
 
   // GET http://localhost:8080/api/snippet/

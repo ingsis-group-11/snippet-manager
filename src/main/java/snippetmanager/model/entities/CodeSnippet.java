@@ -9,7 +9,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import java.time.LocalDateTime;
-import java.util.UUID;
 import lombok.Getter;
 import lombok.Setter;
 import snippetmanager.util.CodeLanguage;
@@ -20,9 +19,7 @@ import snippetmanager.util.CodeLanguage;
 public class CodeSnippet {
   @Id
   @GeneratedValue(strategy = GenerationType.UUID)
-  private String id;
-
-  private String assetId = UUID.randomUUID().toString();
+  private String assetId;
 
   @Enumerated(EnumType.STRING)
   private CodeLanguage language;

@@ -13,7 +13,7 @@ public class FormatterProducer extends RedisStreamProducer implements ProducerIn
 
   @Autowired
   public FormatterProducer(
-      @Value("${stream.key.formatter}") String streamKey, ReactiveRedisTemplate<String, String> redis) {
+      @Value("${redis.producer.formatter}") String streamKey, ReactiveRedisTemplate<String, String> redis) {
     super(streamKey, redis);
   }
 

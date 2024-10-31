@@ -11,4 +11,5 @@ public class SnippetSendDto {
   private String version;
   private String content;
   private String userId;
+  private String lintingResult;
 }

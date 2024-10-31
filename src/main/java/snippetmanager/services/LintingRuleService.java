@@ -1,5 +1,6 @@
 package snippetmanager.services;
 
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import java.util.List;
 import java.util.Optional;
@@ -8,8 +9,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import snippetmanager.model.dtos.RuleDto;
 import snippetmanager.model.dtos.SnippetSendDto;
+import snippetmanager.model.entities.LintingResult;
 import snippetmanager.model.entities.LintingRule;
 import snippetmanager.redis.linter.LintProducer;
+import snippetmanager.repositories.LintingResultRepository;
 import snippetmanager.repositories.LintingRuleRepository;
 
 @Service
@@ -17,6 +20,8 @@ public class LintingRuleService {
   @Autowired private LintingRuleRepository lintingRuleRepository;
 
   @Autowired private CodeSnippetService codeSnippetService;
+
+  @Autowired private LintingResultRepository lintingResultRepository;
 
   private final LintProducer lintProducer;
 
@@ -43,6 +48,19 @@ public class LintingRuleService {
     }
     publishAllSnippetsToRedis(userId);
     return "Success updating rules";
+  }
+
+  public void saveLintResult(String assetId, String result) {
+    LintingResult lintingResult = lintingResultRepository.findById(assetId)
+            .orElse(LintingResult.builder().assetId(assetId).build());
+    lintingResult.setResultAsString(result);
+    lintingResultRepository.save(lintingResult);
+  }
+
+  public String getLintResult(String assetId) {
+    LintingResult lintingResult = lintingResultRepository.findById(assetId)
+            .orElseThrow(() -> new EntityNotFoundException("No lint result found for assetId: " + assetId));
+    return lintingResult.getResultAsString();
   }
 
   private void publishAllSnippetsToRedis(String userId) {
