@@ -1,18 +1,28 @@
 package snippetmanager.services;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.transaction.Transactional;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.http.ResponseEntity;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.interceptor.TransactionAspectSupport;
+import org.springframework.web.client.HttpServerErrorException;
+import org.springframework.web.multipart.MultipartFile;
 import snippetmanager.model.dtos.RuleDto;
 import snippetmanager.model.dtos.SnippetSendDto;
 import snippetmanager.model.entities.FormatterRule;
 import snippetmanager.redis.formatter.FormatterProducer;
-import snippetmanager.redis.linter.LintProducer;
 import snippetmanager.repositories.FormatterRuleRepository;
+import snippetmanager.webservice.asset.AssetManager;
 
 @Service
 public class FormatterRuleService {
+  @Autowired private AssetManager assetManager;
+
   @Autowired private FormatterRuleRepository formatterRuleRepository;
 
   @Autowired private CodeSnippetService codeSnippetService;
@@ -24,36 +34,44 @@ public class FormatterRuleService {
     this.formatterProducer = formatterProducer;
   }
 
+  @Transactional
   public String createOrUpdateRules(List<RuleDto> rules, String userId) {
-    String response = "";
     for (RuleDto ruleDto : rules) {
       Optional<FormatterRule> rule = searchRule(ruleDto.getName(), userId);
       if (rule.isPresent()) {
         rule.get().setValue(ruleDto.getValue());
-        formatterRuleRepository.save(rule.get());
-        response = "Rules updated successfully";
+        try {
+          formatterRuleRepository.save(rule.get());
+        } catch (Exception e) {
+          TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+          throw new HttpServerErrorException(HttpStatusCode.valueOf(500), "Error updating rules");
+        }
       } else {
         createAndSaveRule(userId, ruleDto);
-        response = "Rules created successfully";
       }
     }
+    createOrUpdateRulesInAssetService(rules, userId);
     publishAllSnippetsToRedis(userId);
-    return response;
+    return "Success updating rules";
+  }
+
+  public List<RuleDto> getRules(String userId) {
+    return formatterRuleRepository.findAllByUserId(userId);
   }
 
   private void publishAllSnippetsToRedis(String userId) {
     codeSnippetService
-            .getAllSnippets(userId)
-            .forEach(
-                    snippet -> {
-                      formatterProducer.publishEvent(
-                              SnippetSendDto.builder()
-                                      .assetId(snippet.getAssetId())
-                                      .language(snippet.getLanguage())
-                                      .version(snippet.getVersion())
-                                      .userId(snippet.getUserId())
-                                      .build());
-                    });
+        .getAllSnippets(userId)
+        .forEach(
+            snippet -> {
+              formatterProducer.publishEvent(
+                  SnippetSendDto.builder()
+                      .assetId(snippet.getAssetId())
+                      .language(snippet.getLanguage())
+                      .version(snippet.getVersion())
+                      .userId(snippet.getUserId())
+                      .build());
+            });
   }
 
   private void createAndSaveRule(String userId, RuleDto ruleDto) {
@@ -61,14 +79,35 @@ public class FormatterRuleService {
     newRule.setName(ruleDto.getName());
     newRule.setValue(ruleDto.getValue());
     newRule.setUserId(userId);
-    formatterRuleRepository.save(newRule);
+    try {
+      formatterRuleRepository.save(newRule);
+    } catch (Exception e) {
+      TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+      throw new HttpServerErrorException(HttpStatusCode.valueOf(500), "Error creating rule");
+    }
   }
 
   private Optional<FormatterRule> searchRule(String ruleName, String userId) {
     return formatterRuleRepository.findByNameAndUserId(ruleName, userId);
   }
 
-  public List<RuleDto> getRules(String userId) {
-    return formatterRuleRepository.findAllByUserId(userId);
+  private void createOrUpdateRulesInAssetService(List<RuleDto> rules, String userId) {
+    try {
+      ObjectMapper objectMapper = new ObjectMapper();
+      String jsonString = objectMapper.writeValueAsString(rules);
+
+      MultipartFile rulesToJson =
+          new MockMultipartFile(
+              "formatter-rules-" + userId, "rules.json", "application/json", jsonString.getBytes());
+
+      ResponseEntity<String> createAssetResponse =
+          assetManager.createAsset("format-rules", userId, rulesToJson);
+      if (createAssetResponse.getStatusCode().isError()) {
+        throw new HttpServerErrorException(
+            createAssetResponse.getStatusCode(), "Error creating asset with formatter rules");
+      }
+    } catch (Exception e) {
+      throw new RuntimeException("Error creating asset with formatter rules", e);
+    }
   }
 }

@@ -1,6 +1,7 @@
 package snippetmanager.util;
 
-public enum Result {
+public enum LintResult {
   SUCCESS,
+  IN_PROGRESS,
   FAILURE
 }

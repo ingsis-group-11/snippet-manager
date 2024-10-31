@@ -19,9 +19,9 @@ public class FormatterConsumer {
   private final String streamKey;
 
   public FormatterConsumer(
-          @Value("${redis.consumer.formatter}") String streamKey,
-          ReactiveRedisTemplate<String, String> redisTemplate,
-          StreamReceiver<String, MapRecord<String, String, String>> streamReceiver) {
+      @Value("${redis.consumer.formatter}") String streamKey,
+      ReactiveRedisTemplate<String, String> redisTemplate,
+      StreamReceiver<String, MapRecord<String, String, String>> streamReceiver) {
     this.streamKey = streamKey;
     this.redisTemplate = redisTemplate;
     this.streamReceiver = streamReceiver;
@@ -30,7 +30,7 @@ public class FormatterConsumer {
   @PostConstruct
   public void startConsuming() {
     Flux<MapRecord<String, String, String>> messageFlux =
-            streamReceiver.receive(StreamOffset.fromStart(streamKey));
+        streamReceiver.receive(StreamOffset.fromStart(streamKey));
 
     messageFlux.doOnNext(this::processMessage).subscribe();
   }
@@ -52,6 +52,5 @@ public class FormatterConsumer {
     } catch (Exception e) {
       throw new RuntimeException("Error processing message", e);
     }
-
   }
 }

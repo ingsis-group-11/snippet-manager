@@ -87,7 +87,7 @@ class CodeSnippetServiceTest {
         .thenAnswer(
             invocation -> {
               CodeSnippet snippet = invocation.getArgument(0);
-              snippet.setId(snippetId);
+              snippet.setAssetId(snippetId);
               return snippet;
             });
 
@@ -130,7 +130,7 @@ class CodeSnippetServiceTest {
         .thenAnswer(
             invocation -> {
               CodeSnippet snippet = invocation.getArgument(0);
-              snippet.setId(snippetId);
+              snippet.setAssetId(snippetId);
               return snippet;
             });
 
@@ -158,23 +158,21 @@ class CodeSnippetServiceTest {
   @Test
   void getSnippetSuccess() {
     String snippetId = UUID.randomUUID().toString();
-    String assetId = "snippet-test";
     String userId = "1";
 
     CodeSnippet codeSnippet = new CodeSnippet();
-    codeSnippet.setId(snippetId);
-    codeSnippet.setAssetId(assetId);
+    codeSnippet.setAssetId(snippetId);
     codeSnippet.setLanguage(CodeLanguage.PRINTSCRIPT);
 
-    when(permissionManager.canRead(eq(userId), eq(assetId))).thenReturn(true);
-    when(codeSnippetRepository.findCodeSnippetByAssetId(eq(assetId)))
+    when(permissionManager.canRead(eq(userId), eq(snippetId))).thenReturn(true);
+    when(codeSnippetRepository.findCodeSnippetByAssetId(eq(snippetId)))
         .thenReturn(Optional.of(codeSnippet));
-    when(assetManager.getAsset(eq("snippets"), eq(assetId)))
+    when(assetManager.getAsset(eq("snippets"), eq(snippetId)))
         .thenReturn(new ByteArrayInputStream("test content".getBytes()));
 
-    SnippetSendDto result = codeSnippetService.getSnippet(assetId, userId);
+    SnippetSendDto result = codeSnippetService.getSnippet(snippetId, userId);
 
-    assertEquals(assetId, result.getAssetId());
+    assertEquals(snippetId, result.getAssetId());
     assertEquals("PRINTSCRIPT", result.getLanguage());
   }
 
@@ -214,7 +212,7 @@ class CodeSnippetServiceTest {
     String userId = "1";
 
     CodeSnippet existingSnippet = new CodeSnippet();
-    existingSnippet.setId(snippetId);
+    existingSnippet.setAssetId(snippetId);
     existingSnippet.setAssetId(assetId);
     existingSnippet.setVersion("1.1");
     existingSnippet.setLanguage(CodeLanguage.PRINTSCRIPT);
@@ -227,14 +225,13 @@ class CodeSnippetServiceTest {
             .language("PRINTSCRIPT")
             .version("1.1")
             .content(mockMultipartFile("test content"))
-            .assetId(assetId)
             .build();
 
     when(codeSnippetRepository.save(any(CodeSnippet.class)))
         .thenAnswer(
             invocation -> {
               CodeSnippet snippet = invocation.getArgument(0);
-              snippet.setId(snippetId);
+              snippet.setAssetId(snippetId);
               return snippet;
             });
 

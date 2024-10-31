@@ -1,6 +1,5 @@
 package snippetmanager.redis.linter;
 
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
@@ -21,13 +20,12 @@ public class LintConsumer {
   private final StreamReceiver<String, MapRecord<String, String, String>> streamReceiver;
   private final String streamKey;
 
-  @Autowired
-  LintingRuleService lintingRuleService;
+  @Autowired LintingRuleService lintingRuleService;
 
   public LintConsumer(
-          @Value("${redis.consumer.lint}") String streamKey,
-          ReactiveRedisTemplate<String, String> redisTemplate,
-          StreamReceiver<String, MapRecord<String, String, String>> streamReceiver) {
+      @Value("${redis.consumer.lint}") String streamKey,
+      ReactiveRedisTemplate<String, String> redisTemplate,
+      StreamReceiver<String, MapRecord<String, String, String>> streamReceiver) {
     this.streamKey = streamKey;
     this.redisTemplate = redisTemplate;
     this.streamReceiver = streamReceiver;
@@ -36,7 +34,7 @@ public class LintConsumer {
   @PostConstruct
   public void startConsuming() {
     Flux<MapRecord<String, String, String>> messageFlux =
-            streamReceiver.receive(StreamOffset.fromStart(streamKey));
+        streamReceiver.receive(StreamOffset.fromStart(streamKey));
 
     messageFlux.doOnNext(this::processMessage).subscribe();
   }
@@ -56,6 +54,5 @@ public class LintConsumer {
     } catch (Exception e) {
       throw new RuntimeException("Error processing message", e);
     }
-
   }
 }

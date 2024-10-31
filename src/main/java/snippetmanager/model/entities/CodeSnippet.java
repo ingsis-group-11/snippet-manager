@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 import lombok.Getter;
 import lombok.Setter;
 import snippetmanager.util.CodeLanguage;
+import snippetmanager.util.LintResult;
 
 @Entity
 @Getter
@@ -33,6 +34,17 @@ public class CodeSnippet {
   protected void onCreate() {
     createdAt = LocalDateTime.now();
     updatedAt = createdAt;
+  }
+
+  private LintResult lintResult;
+
+  public void setResultAsString(String result) {
+    String resultEnum = result.toUpperCase();
+    this.lintResult = LintResult.valueOf(resultEnum);
+  }
+
+  public String getResultAsString() {
+    return lintResult.toString();
   }
 
   @PreUpdate

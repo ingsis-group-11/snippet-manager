@@ -21,7 +21,7 @@ public class CodeSnippetRepositoryTest {
     codeSnippet.setVersion("1.1");
     codeSnippetRepository.save(codeSnippet);
 
-    Optional<CodeSnippet> findSnippet = codeSnippetRepository.findById(codeSnippet.getId());
+    Optional<CodeSnippet> findSnippet = codeSnippetRepository.findById(codeSnippet.getAssetId());
     assert findSnippet.isPresent();
     assert findSnippet.get().getAssetId().equals(assetId);
     assert findSnippet.get().getLanguage().equals(CodeLanguage.PRINTSCRIPT);
@@ -39,7 +39,7 @@ public class CodeSnippetRepositoryTest {
     codeSnippetRepository.save(codeSnippet);
 
     // Search for the snippet
-    Optional<CodeSnippet> findSnippet = codeSnippetRepository.findById(codeSnippet.getId());
+    Optional<CodeSnippet> findSnippet = codeSnippetRepository.findById(codeSnippet.getAssetId());
     assert findSnippet.isPresent();
 
     // Update the snippet
@@ -48,7 +48,7 @@ public class CodeSnippetRepositoryTest {
     codeSnippetRepository.save(findSnippet.get());
 
     // Search for the updated snippet
-    Optional<CodeSnippet> updatedSnippet = codeSnippetRepository.findById(codeSnippet.getId());
+    Optional<CodeSnippet> updatedSnippet = codeSnippetRepository.findById(codeSnippet.getAssetId());
     assert updatedSnippet.isPresent();
     assert updatedSnippet.get().getAssetId().equals(assetId);
     assert updatedSnippet.get().getLanguage().equals(CodeLanguage.PRINTSCRIPT);
@@ -66,14 +66,14 @@ public class CodeSnippetRepositoryTest {
     codeSnippetRepository.save(codeSnippet);
 
     // Search for the snippet
-    Optional<CodeSnippet> findSnippet = codeSnippetRepository.findById(codeSnippet.getId());
+    Optional<CodeSnippet> findSnippet = codeSnippetRepository.findById(codeSnippet.getAssetId());
     assert findSnippet.isPresent();
 
     // Delete the snippet
     codeSnippetRepository.delete(findSnippet.get());
 
     // Search for the deleted snippet
-    Optional<CodeSnippet> deletedSnippet = codeSnippetRepository.findById(codeSnippet.getId());
+    Optional<CodeSnippet> deletedSnippet = codeSnippetRepository.findById(codeSnippet.getAssetId());
     assert deletedSnippet.isEmpty();
   }
 }

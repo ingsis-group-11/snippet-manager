@@ -12,9 +12,9 @@ public class RedisStreamConsumer {
 
   @Bean
   public StreamReceiver<String, MapRecord<String, String, String>> streamReceiver(
-          ReactiveRedisTemplate<String, String> redisTemplate) {
+      ReactiveRedisTemplate<String, String> redisTemplate) {
     StreamReceiverOptions<String, MapRecord<String, String, String>> options =
-            StreamReceiverOptions.builder().pollTimeout(java.time.Duration.ofSeconds(1)).build();
+        StreamReceiverOptions.builder().pollTimeout(java.time.Duration.ofSeconds(1)).build();
     return StreamReceiver.create(redisTemplate.getConnectionFactory(), options);
   }
 }
