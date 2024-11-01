@@ -44,6 +44,9 @@ public class CodeSnippet {
   }
 
   public String getResultAsString() {
+    if (lintResult == null) {
+      return null;
+    }
     return lintResult.toString();
   }
 

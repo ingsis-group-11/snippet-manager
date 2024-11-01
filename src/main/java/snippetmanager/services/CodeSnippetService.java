@@ -5,7 +5,6 @@ import jakarta.transaction.Transactional;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.PermissionDeniedDataAccessException;
@@ -46,14 +45,16 @@ public class CodeSnippetService {
   @Transactional
   public String createSnippet(SnippetReceivedDto snippet, String userId) {
     compileSnippet(snippet);
-    codeSnippetRepository
-        .findCodeSnippetByAssetId(snippet.getAssetId())
-        .ifPresent(
-            codeSnippet -> {
-              throw new IllegalArgumentException("Snippet with the same assetId already exists");
-            });
+    if (snippet.getAssetId() != null) {
+      codeSnippetRepository
+          .findCodeSnippetByAssetId(snippet.getAssetId())
+          .ifPresent(
+              codeSnippet -> {
+                throw new IllegalArgumentException("Snippet with the same assetId already exists");
+              });
+    }
     CodeSnippet codeSnippet = createAndSaveCodeSnippet(snippet);
-
+    /*
     ResponseEntity<String> permissionResponse =
         createNewPermission(userId, codeSnippet.getAssetId());
     if (permissionResponse.getStatusCode().isError()) {
@@ -61,31 +62,37 @@ public class CodeSnippetService {
       throw new HttpServerErrorException(permissionResponse.getStatusCode());
     }
 
-    ResponseEntity<String> assetResponse = createNewAsset(snippet);
+     */
+
+    ResponseEntity<String> assetResponse = createNewAsset(codeSnippet, snippet.getContent());
     if (assetResponse.getStatusCode().isError()) {
       TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
       deletePermission(userId, codeSnippet.getAssetId());
       throw new HttpServerErrorException(assetResponse.getStatusCode());
     }
 
-    publishToRedis(snippet, codeSnippet);
+    publishToRedis(snippet, codeSnippet, userId);
 
     return "Snippet created successfully";
   }
 
   public SnippetSendDto getSnippet(String assetId, String userId) {
+    /*
     boolean canAccess = canReadSnippet(userId, assetId);
     if (!canAccess) {
       throw new PermissionDeniedDataAccessException(
           "You don't have permission to access this snippet",
           new Exception("You don't have permission to access this snippet"));
     }
+
+     */
     CodeSnippet codeSnippet = findSnippetByAssetId(assetId);
     String lintResult = codeSnippet.getResultAsString();
 
     InputStream assetResponse = getAsset(assetId);
     MultipartFile snippetContent = toMultipartFile(assetResponse, assetId);
-    SnippetSendDto snippetDto = convertToSnippetSendDto(codeSnippet, snippetContent, lintResult);
+    SnippetSendDto snippetDto =
+        convertToSnippetSendDto(codeSnippet, snippetContent, lintResult, userId);
     snippetDto.setUserId(userId);
     return snippetDto;
   }
@@ -102,7 +109,7 @@ public class CodeSnippetService {
                   String lintResult = codeSnippet.getResultAsString();
 
                   SnippetSendDto snippetDto =
-                      convertToSnippetSendDto(codeSnippet, asset, lintResult);
+                      convertToSnippetSendDto(codeSnippet, asset, lintResult, userId);
                   snippetDto.setUserId(userId);
                   return snippetDto;
                 })
@@ -152,7 +159,6 @@ public class CodeSnippetService {
   // ** Internal methods
   private CodeSnippet createAndSaveCodeSnippet(SnippetReceivedDto snippet) {
     CodeSnippet codeSnippet = new CodeSnippet();
-    codeSnippet.setAssetId(snippet.getAssetId());
     codeSnippet.setLanguage(snippet.getLanguageInEnum());
     codeSnippet.setVersion(snippet.getVersion());
     try {
@@ -165,21 +171,26 @@ public class CodeSnippetService {
   }
 
   private SnippetSendDto convertToSnippetSendDto(
-      CodeSnippet codeSnippets, MultipartFile content, String lintingResult) {
+      CodeSnippet codeSnippets, MultipartFile content, String lintingResult, String userId) {
     return SnippetSendDto.builder()
         .language(codeSnippets.getLanguage().name())
         .version(codeSnippets.getVersion())
         .assetId(codeSnippets.getAssetId())
         .content(getContentFromMultipartFile(content))
         .lintingResult(lintingResult)
+        .userId(userId)
         .build();
   }
 
   private List<CodeSnippet> getAllCanReadSnippets(String userId) {
+    /*
     return Objects.requireNonNull(permissionManager.getSnippetsUserCanRead(userId).getBody())
         .stream()
         .map(this::findSnippetByAssetId)
         .collect(Collectors.toList());
+
+     */
+    return codeSnippetRepository.findAll();
   }
 
   private String getContentFromMultipartFile(MultipartFile content) {
@@ -240,9 +251,8 @@ public class CodeSnippetService {
 
   // ** Asset manager
 
-  private ResponseEntity<String> createNewAsset(SnippetReceivedDto snippet) {
-    return assetManager.createAsset(
-        assetManagerContainer, snippet.getAssetId(), snippet.getContent());
+  private ResponseEntity<String> createNewAsset(CodeSnippet snippet, MultipartFile content) {
+    return assetManager.createAsset(assetManagerContainer, snippet.getAssetId(), content);
   }
 
   private InputStream getAsset(String assetId) {
@@ -254,10 +264,9 @@ public class CodeSnippetService {
   }
 
   // ** Redis
-  private void publishToRedis(SnippetReceivedDto snippet, CodeSnippet codeSnippet) {
-    String assetId = codeSnippet.getAssetId();
+  private void publishToRedis(SnippetReceivedDto snippet, CodeSnippet codeSnippet, String userId) {
     String result = codeSnippet.getResultAsString();
     MultipartFile content = snippet.getContent();
-    lintProducer.publishEvent(convertToSnippetSendDto(codeSnippet, content, result));
+    lintProducer.publishEvent(convertToSnippetSendDto(codeSnippet, content, result, userId));
   }
 }

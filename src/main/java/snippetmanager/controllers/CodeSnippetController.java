@@ -27,8 +27,8 @@ public class CodeSnippetController {
   private String getUserId() {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     Jwt jwt = (Jwt) authentication.getPrincipal();
-
-    return jwt.getClaimAsString("sub");
+    String userId = jwt.getClaimAsString("sub");
+    return userId.replaceFirst("^auth0\\|", "");
   }
 
   // PUT http://localhost:8080/api/snippet/
@@ -39,12 +39,7 @@ public class CodeSnippetController {
       @RequestParam("name") String fileName,
       @RequestParam("language") String language) {
     SnippetReceivedDto snippet =
-        SnippetReceivedDto.builder()
-            .content(file)
-            .assetId(fileName)
-            .language(language)
-            .version(version)
-            .build();
+        SnippetReceivedDto.builder().content(file).language(language).version(version).build();
     return ResponseEntity.ok(codeSnippetService.createSnippet(snippet, getUserId()));
   }
 

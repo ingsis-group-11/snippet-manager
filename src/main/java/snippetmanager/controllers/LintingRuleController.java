@@ -22,8 +22,8 @@ public class LintingRuleController {
   private String getUserId() {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     Jwt jwt = (Jwt) authentication.getPrincipal();
-
-    return jwt.getClaimAsString("sub");
+    String userId = jwt.getClaimAsString("sub");
+    return userId.replaceFirst("^auth0\\|", "");
   }
 
   @PutMapping

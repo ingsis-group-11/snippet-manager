@@ -3,7 +3,9 @@ package snippetmanager.services;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
@@ -124,8 +126,12 @@ public class LintingRuleService {
 
   private void createOrUpdateRulesInAssetService(List<RuleDto> rules, String userId) {
     try {
+      Map<String, String> rulesMap =
+          rules.stream()
+              .collect(Collectors.toMap(RuleDto::getName, rule -> String.valueOf(rule.getValue())));
+
       ObjectMapper objectMapper = new ObjectMapper();
-      String jsonString = objectMapper.writeValueAsString(rules);
+      String jsonString = objectMapper.writeValueAsString(rulesMap);
 
       MultipartFile rulesToJson =
           new MockMultipartFile(
