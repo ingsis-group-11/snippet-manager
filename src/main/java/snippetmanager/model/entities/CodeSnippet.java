@@ -36,6 +36,7 @@ public class CodeSnippet {
     updatedAt = createdAt;
   }
 
+  @Enumerated(EnumType.STRING)
   private LintResult lintResult;
 
   public void setResultAsString(String result) {

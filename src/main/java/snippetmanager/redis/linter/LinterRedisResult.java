@@ -6,6 +6,6 @@ import lombok.Setter;
 @Getter
 @Setter
 public class LinterRedisResult {
-    private String assetId;
-    private String linterResult;
+  private String assetId;
+  private String linterResult;
 }

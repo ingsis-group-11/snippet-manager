@@ -22,9 +22,9 @@ public class LintConsumer extends RedisStreamConsumer<String> {
   private final ObjectMapper objectMapper = new ObjectMapper();
 
   public LintConsumer(
-          @Value("${redis.consumer.lint}") @NotNull String streamKey,
-          @Value("${redis.consumer.group}") @NotNull String consumerGroup,
-          @NotNull RedisTemplate<String, String> redis) {
+      @Value("${redis.consumer.lint}") @NotNull String streamKey,
+      @Value("${redis.consumer.group}") @NotNull String consumerGroup,
+      @NotNull RedisTemplate<String, String> redis) {
     super(streamKey, consumerGroup, redis);
   }
 
@@ -33,9 +33,10 @@ public class LintConsumer extends RedisStreamConsumer<String> {
     try {
       String jsonValue = objectRecord.getValue();
       LinterRedisResult linterRedisResult =
-              objectMapper.readValue(jsonValue, LinterRedisResult.class);
+          objectMapper.readValue(jsonValue, LinterRedisResult.class);
 
-      lintingRuleService.saveLintResult(linterRedisResult.getAssetId(), linterRedisResult.getLinterResult());
+      lintingRuleService.saveLintResult(
+          linterRedisResult.getAssetId(), linterRedisResult.getLinterResult());
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
@@ -45,8 +46,8 @@ public class LintConsumer extends RedisStreamConsumer<String> {
   @Override
   protected StreamReceiver.StreamReceiverOptions<String, ObjectRecord<String, String>> options() {
     return StreamReceiver.StreamReceiverOptions.builder()
-            .pollTimeout(Duration.ofSeconds(5))
-            .targetType(String.class)
-            .build();
+        .pollTimeout(Duration.ofSeconds(5))
+        .targetType(String.class)
+        .build();
   }
 }
