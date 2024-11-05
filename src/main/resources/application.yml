@@ -45,7 +45,7 @@ redis:
     formatter: "formatter-queue"
   consumer:
     lint: "lint-results"
-    formatter: "formatter-results"
+    group: "lint-group"
 
 # logging:
 #  level:
