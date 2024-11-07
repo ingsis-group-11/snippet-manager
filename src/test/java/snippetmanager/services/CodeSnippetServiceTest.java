@@ -16,9 +16,12 @@ import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.PermissionDeniedDataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -27,6 +30,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Mono;
@@ -34,6 +39,7 @@ import snippetmanager.model.dtos.SnippetReceivedDto;
 import snippetmanager.model.dtos.SnippetSendDto;
 import snippetmanager.model.dtos.webservice.PermissionDto;
 import snippetmanager.model.entities.CodeSnippet;
+import snippetmanager.redis.linter.LintProducer;
 import snippetmanager.repositories.CodeSnippetRepository;
 import snippetmanager.util.CodeLanguage;
 import snippetmanager.webservice.WebClientUtility;
@@ -53,6 +59,8 @@ class CodeSnippetServiceTest {
 
   @Mock private PrintscriptManager printscriptManager;
 
+  @Mock private LintProducer lintProducer;
+
   @InjectMocks private CodeSnippetService codeSnippetService;
 
   @BeforeEach
@@ -68,49 +76,46 @@ class CodeSnippetServiceTest {
     when(jwt.getClaimAsString("sub")).thenReturn("1");
 
     SecurityContextHolder.setContext(securityContext);
+
+    codeSnippetService = new CodeSnippetService(
+            codeSnippetRepository,
+            lintProducer,
+            permissionManager,
+            printscriptManager,
+            assetManager);
   }
 
   @Test
   void createSnippetSuccess() {
     MultipartFile contentFile = mockMultipartFile("test content");
-    String snippetId = "snippet-test";
+    String snippetId = UUID.randomUUID().toString();
 
-    SnippetReceivedDto snippetDto =
-        SnippetReceivedDto.builder()
-            .assetId(snippetId)
+    SnippetReceivedDto snippetDto = SnippetReceivedDto.builder()
             .language("PRINTSCRIPT")
             .version("1.1")
             .content(contentFile)
             .build();
 
+    when(printscriptManager.compile(anyString(), any(CodeLanguage.class), anyString()))
+            .thenReturn(new ResponseEntity<>("Snippet compiled successfully", HttpStatus.OK));
+
     when(codeSnippetRepository.save(any(CodeSnippet.class)))
-        .thenAnswer(
-            invocation -> {
-              CodeSnippet snippet = invocation.getArgument(0);
-              snippet.setAssetId(snippetId);
-              return snippet;
-            });
+            .thenAnswer(
+                    invocation -> {
+                      CodeSnippet snippet = invocation.getArgument(0);
+                      snippet.setAssetId(snippetId);
+                      return snippet;
+                    });
 
     when(assetManager.createAsset(eq("snippets"), eq(snippetId), any(MultipartFile.class)))
-        .thenReturn(new ResponseEntity<>("Asset created", HttpStatus.OK));
-
-    Mono<ResponseEntity<String>> mockResponse =
-        Mono.just(new ResponseEntity<>("Permission granted", HttpStatus.OK));
-    when(webClientUtility.postAsync(anyString(), any(PermissionDto.class), eq(String.class)))
-        .thenReturn(mockResponse);
-
-    when(permissionManager.createNewPermission(any(String.class), eq(snippetId)))
-        .thenReturn(new ResponseEntity<>("Permission granted", HttpStatus.OK));
-
-    when(printscriptManager.compile(
-            eq(snippetDto.getContentInString()),
-            eq(snippetDto.getLanguageInEnum()),
-            eq(snippetDto.getVersion())))
-        .thenReturn(new ResponseEntity<>("Snippet compiled successfully", HttpStatus.OK));
+            .thenReturn(new ResponseEntity<>("Asset created", HttpStatus.OK));
 
     String response = codeSnippetService.createSnippet(snippetDto, "1");
 
     assertEquals("Snippet created successfully", response);
+    verify(printscriptManager).compile(anyString(), any(CodeLanguage.class), anyString());
+    verify(codeSnippetRepository).save(any(CodeSnippet.class));
+    verify(assetManager).createAsset(eq("snippets"), eq(snippetId), any(MultipartFile.class));
   }
 
   @Test
