@@ -1,7 +1,6 @@
 package snippetmanager.services;
 
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.transaction.Transactional;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
@@ -11,6 +10,7 @@ import org.springframework.dao.PermissionDeniedDataAccessException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.multipart.MultipartFile;
@@ -25,19 +25,23 @@ import snippetmanager.webservice.printscript.PrintscriptManager;
 
 @Service
 public class CodeSnippetService {
-  @Autowired private CodeSnippetRepository codeSnippetRepository;
+  private CodeSnippetRepository codeSnippetRepository;
 
-  @Autowired private PermissionManager permissionManager;
+  private PermissionManager permissionManager;
 
-  @Autowired private PrintscriptManager printscriptManager;
+  private PrintscriptManager printscriptManager;
 
-  @Autowired private AssetManager assetManager;
+  private AssetManager assetManager;
 
-  private final LintProducer lintProducer;
+  private LintProducer lintProducer;
 
   @Autowired
-  public CodeSnippetService(LintProducer lintProducer) {
+  public CodeSnippetService(CodeSnippetRepository codeSnippetRepository, LintProducer lintProducer, PermissionManager permissionManager, PrintscriptManager printscriptManager, AssetManager assetManager) {
     this.lintProducer = lintProducer;
+    this.codeSnippetRepository = codeSnippetRepository;
+    this.permissionManager = permissionManager;
+    this.printscriptManager = printscriptManager;
+    this.assetManager = assetManager;
   }
 
   private final String assetManagerContainer = "snippets";
@@ -54,15 +58,13 @@ public class CodeSnippetService {
               });
     }
     CodeSnippet codeSnippet = createAndSaveCodeSnippet(snippet);
-    /*
+
     ResponseEntity<String> permissionResponse =
         createNewPermission(userId, codeSnippet.getAssetId());
     if (permissionResponse.getStatusCode().isError()) {
       TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
       throw new HttpServerErrorException(permissionResponse.getStatusCode());
     }
-
-     */
 
     ResponseEntity<String> assetResponse = createNewAsset(codeSnippet, snippet.getContent());
     if (assetResponse.getStatusCode().isError()) {
@@ -77,7 +79,7 @@ public class CodeSnippetService {
   }
 
   public SnippetSendDto getSnippet(String assetId, String userId) {
-    /*
+
     boolean canAccess = canReadSnippet(userId, assetId);
     if (!canAccess) {
       throw new PermissionDeniedDataAccessException(
@@ -85,7 +87,6 @@ public class CodeSnippetService {
           new Exception("You don't have permission to access this snippet"));
     }
 
-     */
     CodeSnippet codeSnippet = findSnippetByAssetId(assetId);
     String lintResult = codeSnippet.getResultAsString();
 

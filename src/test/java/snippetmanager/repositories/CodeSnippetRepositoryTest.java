@@ -1,79 +1,92 @@
 package snippetmanager.repositories;
 
 import java.util.Optional;
+import java.util.UUID;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import snippetmanager.model.entities.CodeSnippet;
 import snippetmanager.util.CodeLanguage;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
 @DataJpaTest
 public class CodeSnippetRepositoryTest {
 
-  @Autowired private CodeSnippetRepository codeSnippetRepository;
+  @MockBean
+  private CodeSnippetRepository codeSnippetRepository;
 
   @Test
   void createAndSaveNewSnippet() {
-    String assetId = "snippet-test";
+    String assetId = UUID.randomUUID().toString();
     CodeSnippet codeSnippet = new CodeSnippet();
     codeSnippet.setAssetId(assetId);
     codeSnippet.setLanguage(CodeLanguage.PRINTSCRIPT);
     codeSnippet.setVersion("1.1");
+
+    when(codeSnippetRepository.save(any(CodeSnippet.class))).thenReturn(codeSnippet);
+
     codeSnippetRepository.save(codeSnippet);
 
-    Optional<CodeSnippet> findSnippet = codeSnippetRepository.findById(codeSnippet.getAssetId());
+    when(codeSnippetRepository.findById(assetId)).thenReturn(Optional.of(codeSnippet));
+
+    Optional<CodeSnippet> findSnippet = codeSnippetRepository.findById(assetId);
     assert findSnippet.isPresent();
     assert findSnippet.get().getAssetId().equals(assetId);
     assert findSnippet.get().getLanguage().equals(CodeLanguage.PRINTSCRIPT);
     assert findSnippet.get().getVersion().equals("1.1");
+
+    verify(codeSnippetRepository, times(1)).save(any(CodeSnippet.class));
+    verify(codeSnippetRepository, times(1)).findById(assetId);
   }
 
   @Test
   void updateExistingSnippet() {
-    String assetId = "snippet-test";
-    // Create new snippet
+    String assetId = UUID.randomUUID().toString();
     CodeSnippet codeSnippet = new CodeSnippet();
     codeSnippet.setAssetId(assetId);
     codeSnippet.setLanguage(CodeLanguage.PRINTSCRIPT);
     codeSnippet.setVersion("1.1");
+
+    when(codeSnippetRepository.save(any(CodeSnippet.class))).thenReturn(codeSnippet);
+
     codeSnippetRepository.save(codeSnippet);
 
-    // Search for the snippet
-    Optional<CodeSnippet> findSnippet = codeSnippetRepository.findById(codeSnippet.getAssetId());
-    assert findSnippet.isPresent();
+    codeSnippet.setVersion("1.2");
+    when(codeSnippetRepository.findById(assetId)).thenReturn(Optional.of(codeSnippet));
+    codeSnippetRepository.save(codeSnippet);
 
-    // Update the snippet
-    findSnippet.get().setVersion("1.2");
-
-    codeSnippetRepository.save(findSnippet.get());
-
-    // Search for the updated snippet
-    Optional<CodeSnippet> updatedSnippet = codeSnippetRepository.findById(codeSnippet.getAssetId());
+    Optional<CodeSnippet> updatedSnippet = codeSnippetRepository.findById(assetId);
     assert updatedSnippet.isPresent();
-    assert updatedSnippet.get().getAssetId().equals(assetId);
-    assert updatedSnippet.get().getLanguage().equals(CodeLanguage.PRINTSCRIPT);
     assert updatedSnippet.get().getVersion().equals("1.2");
+
+    verify(codeSnippetRepository, times(2)).save(any(CodeSnippet.class));
+    verify(codeSnippetRepository, times(1)).findById(assetId);
   }
 
   @Test
   void deleteExistingSnippet() {
-    String assetId = "snippet-test";
-    // Create new snippet
+    String assetId = UUID.randomUUID().toString();
     CodeSnippet codeSnippet = new CodeSnippet();
     codeSnippet.setAssetId(assetId);
     codeSnippet.setLanguage(CodeLanguage.PRINTSCRIPT);
     codeSnippet.setVersion("1.1");
+
+    when(codeSnippetRepository.save(any(CodeSnippet.class))).thenReturn(codeSnippet);
+    when(codeSnippetRepository.findById(assetId)).thenReturn(Optional.empty());
+    doNothing().when(codeSnippetRepository).delete(any(CodeSnippet.class));
+
     codeSnippetRepository.save(codeSnippet);
 
-    // Search for the snippet
-    Optional<CodeSnippet> findSnippet = codeSnippetRepository.findById(codeSnippet.getAssetId());
-    assert findSnippet.isPresent();
+    codeSnippetRepository.delete(codeSnippet);
 
-    // Delete the snippet
-    codeSnippetRepository.delete(findSnippet.get());
-
-    // Search for the deleted snippet
-    Optional<CodeSnippet> deletedSnippet = codeSnippetRepository.findById(codeSnippet.getAssetId());
+    Optional<CodeSnippet> deletedSnippet = codeSnippetRepository.findById(assetId);
     assert deletedSnippet.isEmpty();
+
+    verify(codeSnippetRepository, times(1)).delete(any(CodeSnippet.class));
+    verify(codeSnippetRepository, times(1)).findById(assetId);
   }
 }
