@@ -1,5 +1,8 @@
 package snippetmanager.security;
 
+import static org.springframework.security.config.Customizer.withDefaults;
+
+import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,10 +21,6 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.util.List;
-
-import static org.springframework.security.config.Customizer.withDefaults;
-
 @Configuration
 @EnableWebSecurity
 public class Auth2ResourceServerSecurityConfiguration {
@@ -34,8 +33,7 @@ public class Auth2ResourceServerSecurityConfiguration {
 
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-    http
-        .authorizeHttpRequests(
+    http.authorizeHttpRequests(
             authz ->
                 authz
                     .requestMatchers("/")
@@ -51,7 +49,7 @@ public class Auth2ResourceServerSecurityConfiguration {
                     .anyRequest()
                     .authenticated())
         .oauth2ResourceServer(oauth2 -> oauth2.jwt(withDefaults()))
-        .cors(withDefaults())  // Enable CORS with the configured CorsConfigurationSource
+        .cors(withDefaults())
         .csrf(AbstractHttpConfigurer::disable);
     return http.build();
   }
@@ -70,9 +68,9 @@ public class Auth2ResourceServerSecurityConfiguration {
   @Bean
   public CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration configuration = new CorsConfiguration();
-    configuration.setAllowedOrigins(List.of("http://localhost:5173"));  // Allow specific origin
-    configuration.setAllowedMethods(List.of("GET", "PUT", "POST", "DELETE", "OPTIONS"));  // Permit necessary methods
-    configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));  // Allow specific headers
+    configuration.setAllowedOrigins(List.of("http://localhost:5173"));
+    configuration.setAllowedMethods(List.of("GET", "PUT", "POST", "DELETE", "OPTIONS"));
+    configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
     configuration.setAllowCredentials(true);
 
     UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

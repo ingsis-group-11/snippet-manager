@@ -28,7 +28,13 @@ public class CodeSnippetController {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     Jwt jwt = (Jwt) authentication.getPrincipal();
     String userId = jwt.getClaimAsString("sub");
-    return userId.replaceFirst("^auth0\\|", "");
+    int position = userId.indexOf("|");
+
+    if (position != -1) {
+      userId = userId.substring(position + 1);
+    }
+
+    return userId;
   }
 
   // PUT http://localhost:8080/api/snippet/

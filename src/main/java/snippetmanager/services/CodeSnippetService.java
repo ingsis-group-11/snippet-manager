@@ -36,7 +36,12 @@ public class CodeSnippetService {
   private LintProducer lintProducer;
 
   @Autowired
-  public CodeSnippetService(CodeSnippetRepository codeSnippetRepository, LintProducer lintProducer, PermissionManager permissionManager, PrintscriptManager printscriptManager, AssetManager assetManager) {
+  public CodeSnippetService(
+      CodeSnippetRepository codeSnippetRepository,
+      LintProducer lintProducer,
+      PermissionManager permissionManager,
+      PrintscriptManager printscriptManager,
+      AssetManager assetManager) {
     this.lintProducer = lintProducer;
     this.codeSnippetRepository = codeSnippetRepository;
     this.permissionManager = permissionManager;
@@ -80,12 +85,13 @@ public class CodeSnippetService {
 
   public SnippetSendDto getSnippet(String assetId, String userId) {
 
+    /*
     boolean canAccess = canReadSnippet(userId, assetId);
     if (!canAccess) {
       throw new PermissionDeniedDataAccessException(
           "You don't have permission to access this snippet",
           new Exception("You don't have permission to access this snippet"));
-    }
+    }*/
 
     CodeSnippet codeSnippet = findSnippetByAssetId(assetId);
     String lintResult = codeSnippet.getResultAsString();

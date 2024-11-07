@@ -1,23 +1,20 @@
 package snippetmanager.repositories;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
 import java.util.Optional;
 import java.util.UUID;
-
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import snippetmanager.model.entities.CodeSnippet;
 import snippetmanager.util.CodeLanguage;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
-
 @DataJpaTest
 public class CodeSnippetRepositoryTest {
 
-  @MockBean
-  private CodeSnippetRepository codeSnippetRepository;
+  @MockBean private CodeSnippetRepository codeSnippetRepository;
 
   @Test
   void createAndSaveNewSnippet() {
