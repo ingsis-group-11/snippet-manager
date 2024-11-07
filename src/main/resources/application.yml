@@ -53,3 +53,7 @@ stream:
 
 server:
   port: ${DOCKER_PORT:8000}
+
+logging:
+  level:
+    org.springframework.web.filter.CommonsRequestLoggingFilter: DEBUG
