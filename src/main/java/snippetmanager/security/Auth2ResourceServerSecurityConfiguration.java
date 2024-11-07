@@ -1,7 +1,5 @@
 package snippetmanager.security;
 
-import static org.springframework.security.config.Customizer.withDefaults;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,6 +14,13 @@ import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.List;
+
+import static org.springframework.security.config.Customizer.withDefaults;
 
 @Configuration
 @EnableWebSecurity
@@ -29,7 +34,8 @@ public class Auth2ResourceServerSecurityConfiguration {
 
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-    http.authorizeHttpRequests(
+    http
+        .authorizeHttpRequests(
             authz ->
                 authz
                     .requestMatchers("/")
@@ -40,10 +46,12 @@ public class Auth2ResourceServerSecurityConfiguration {
                     .hasAuthority("SCOPE_read:snippets")
                     .requestMatchers(HttpMethod.PUT, "/api/**")
                     .hasAuthority("SCOPE_write:snippets")
+                    .requestMatchers(HttpMethod.OPTIONS, "/**") // Permit all OPTIONS requests
+                    .permitAll()
                     .anyRequest()
                     .authenticated())
         .oauth2ResourceServer(oauth2 -> oauth2.jwt(withDefaults()))
-        .cors(AbstractHttpConfigurer::disable)
+        .cors(withDefaults())  // Enable CORS with the configured CorsConfigurationSource
         .csrf(AbstractHttpConfigurer::disable);
     return http.build();
   }
@@ -57,5 +65,18 @@ public class Auth2ResourceServerSecurityConfiguration {
         new DelegatingOAuth2TokenValidator<>(withIssuer, audienceValidator);
     jwtDecoder.setJwtValidator(withAudience);
     return jwtDecoder;
+  }
+
+  @Bean
+  public CorsConfigurationSource corsConfigurationSource() {
+    CorsConfiguration configuration = new CorsConfiguration();
+    configuration.setAllowedOrigins(List.of("http://localhost:5173"));  // Allow specific origin
+    configuration.setAllowedMethods(List.of("GET", "PUT", "POST", "DELETE", "OPTIONS"));  // Permit necessary methods
+    configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));  // Allow specific headers
+    configuration.setAllowCredentials(true);
+
+    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+    source.registerCorsConfiguration("/**", configuration);
+    return source;
   }
 }
