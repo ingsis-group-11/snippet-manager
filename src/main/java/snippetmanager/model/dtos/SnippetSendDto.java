@@ -10,6 +10,7 @@ public class SnippetSendDto {
   private String language;
   private String version;
   private String content;
+  private String name;
   private String userId;
-  private String lintingResult;
+  private String compliance;
 }

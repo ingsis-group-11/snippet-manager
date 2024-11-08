@@ -181,7 +181,7 @@ public class CodeSnippetService {
         .version(codeSnippets.getVersion())
         .assetId(codeSnippets.getAssetId())
         .content(getContentFromMultipartFile(content))
-        .lintingResult(lintingResult)
+        .compliance(lintingResult)
         .userId(userId)
         .build();
   }

@@ -40,12 +40,19 @@ public class CodeSnippetController {
   // PUT http://localhost:8080/api/snippet/
   @PutMapping
   public ResponseEntity<String> createSnippet(
-      @RequestParam("file") MultipartFile file,
+      @RequestParam("content") MultipartFile file,
       @RequestParam("version") String version,
       @RequestParam("name") String fileName,
-      @RequestParam("language") String language) {
+      @RequestParam("language") String language,
+      @RequestParam("extension") String extension) {
     SnippetReceivedDto snippet =
-        SnippetReceivedDto.builder().content(file).language(language).version(version).build();
+        SnippetReceivedDto.builder()
+            .content(file)
+            .language(language)
+            .version(version)
+            .extension(extension)
+            .name(fileName)
+            .build();
     return ResponseEntity.ok(codeSnippetService.createSnippet(snippet, getUserId()));
   }
 
@@ -65,7 +72,7 @@ public class CodeSnippetController {
   @PutMapping("/{snippetId}")
   public ResponseEntity<String> updateSnippet(
       @PathVariable String snippetId,
-      @RequestParam("file") MultipartFile file,
+      @RequestParam("content") MultipartFile file,
       @RequestParam("name") String fileName,
       @RequestParam("version") String version,
       @RequestParam("language") String language) {

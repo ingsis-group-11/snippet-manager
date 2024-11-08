@@ -15,6 +15,8 @@ public class SnippetReceivedDto {
   private String assetId;
   private String language;
   private String version;
+  private String name;
+  private String extension;
   private MultipartFile content;
 
   public String getContentInString() {

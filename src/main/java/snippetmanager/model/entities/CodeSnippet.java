@@ -22,22 +22,24 @@ public class CodeSnippet {
   @GeneratedValue(strategy = GenerationType.UUID)
   private String assetId;
 
+  private String name;
+  private String extension;
+
   @Enumerated(EnumType.STRING)
   private CodeLanguage language;
 
   private String version;
-
   private LocalDateTime createdAt;
   private LocalDateTime updatedAt;
+
+  @Enumerated(EnumType.STRING)
+  private LintResult lintResult;
 
   @PrePersist
   protected void onCreate() {
     createdAt = LocalDateTime.now();
     updatedAt = createdAt;
   }
-
-  @Enumerated(EnumType.STRING)
-  private LintResult lintResult;
 
   public void setResultAsString(String result) {
     String resultEnum = result.toUpperCase();
