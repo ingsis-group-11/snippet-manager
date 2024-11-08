@@ -16,9 +16,10 @@ import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.dao.PermissionDeniedDataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -27,6 +28,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.test.context.junit4.AbstractTransactionalJUnit4SpringContextTests;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Mono;
@@ -42,21 +44,21 @@ import snippetmanager.webservice.asset.AssetManager;
 import snippetmanager.webservice.permission.PermissionManager;
 import snippetmanager.webservice.printscript.PrintscriptManager;
 
-class CodeSnippetServiceTest {
+@SpringBootTest
+class CodeSnippetServiceTest extends AbstractTransactionalJUnit4SpringContextTests {
+  @MockBean private CodeSnippetRepository codeSnippetRepository;
 
-  @Mock private CodeSnippetRepository codeSnippetRepository;
+  @MockBean private WebClientUtility webClientUtility;
 
-  @Mock private WebClientUtility webClientUtility;
+  @MockBean private PermissionManager permissionManager;
 
-  @Mock private PermissionManager permissionManager;
+  @MockBean private AssetManager assetManager;
 
-  @Mock private AssetManager assetManager;
+  @MockBean private PrintscriptManager printscriptManager;
 
-  @Mock private PrintscriptManager printscriptManager;
+  @MockBean private LintProducer lintProducer;
 
-  @Mock private LintProducer lintProducer;
-
-  @InjectMocks private CodeSnippetService codeSnippetService;
+  @Autowired private CodeSnippetService codeSnippetService;
 
   @BeforeEach
   void setUp() {
@@ -71,14 +73,6 @@ class CodeSnippetServiceTest {
     when(jwt.getClaimAsString("sub")).thenReturn("1");
 
     SecurityContextHolder.setContext(securityContext);
-
-    codeSnippetService =
-        new CodeSnippetService(
-            codeSnippetRepository,
-            lintProducer,
-            permissionManager,
-            printscriptManager,
-            assetManager);
   }
 
   @Test
@@ -103,6 +97,9 @@ class CodeSnippetServiceTest {
               snippet.setAssetId(snippetId);
               return snippet;
             });
+
+    when(permissionManager.createNewPermission(any(String.class), eq(snippetId)))
+        .thenReturn(new ResponseEntity<>("Permission created", HttpStatus.OK));
 
     when(assetManager.createAsset(eq("snippets"), eq(snippetId), any(MultipartFile.class)))
         .thenReturn(new ResponseEntity<>("Asset created", HttpStatus.OK));

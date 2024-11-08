@@ -5,11 +5,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.PermissionDeniedDataAccessException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import org.springframework.web.client.HttpServerErrorException;
@@ -23,7 +22,7 @@ import snippetmanager.webservice.asset.AssetManager;
 import snippetmanager.webservice.permission.PermissionManager;
 import snippetmanager.webservice.printscript.PrintscriptManager;
 
-@Service
+@Component
 public class CodeSnippetService {
   private CodeSnippetRepository codeSnippetRepository;
 
@@ -35,7 +34,6 @@ public class CodeSnippetService {
 
   private LintProducer lintProducer;
 
-  @Autowired
   public CodeSnippetService(
       CodeSnippetRepository codeSnippetRepository,
       LintProducer lintProducer,
@@ -85,13 +83,12 @@ public class CodeSnippetService {
 
   public SnippetSendDto getSnippet(String assetId, String userId) {
 
-    /*
     boolean canAccess = canReadSnippet(userId, assetId);
     if (!canAccess) {
       throw new PermissionDeniedDataAccessException(
           "You don't have permission to access this snippet",
           new Exception("You don't have permission to access this snippet"));
-    }*/
+    }
 
     CodeSnippet codeSnippet = findSnippetByAssetId(assetId);
     String lintResult = codeSnippet.getResultAsString();
