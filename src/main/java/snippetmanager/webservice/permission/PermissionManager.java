@@ -12,6 +12,7 @@ import reactor.core.publisher.Mono;
 import snippetmanager.model.dtos.webservice.PermissionDto;
 import snippetmanager.util.PermissionType;
 import snippetmanager.webservice.WebClientUtility;
+import snippetmanager.util.PermissionType;
 
 @Component
 public class PermissionManager {
@@ -45,15 +46,15 @@ public class PermissionManager {
   }
 
   public ResponseEntity<List<String>> getSnippetsUserCanRead(String userId) {
-    String url = permissionManagerUrl + "/api/permission/" + "user/" + userId;
+    String url = permissionManagerUrl + "/api/permission";
     Mono<ResponseEntity<List<String>>> response =
         webClientUtility.getAsync(url, new ParameterizedTypeReference<List<String>>() {});
     return response.block(Duration.ofSeconds(timeOutInSeconds));
   }
 
-  public ResponseEntity<String> createNewPermission(String userId, String snippetId) {
-    PermissionDto permissionDto = PermissionDto.builder().assetId(snippetId).userId(userId).build();
-    String url = permissionManagerUrl + "/api/permission/";
+  public ResponseEntity<String> createNewPermission(String userId, String snippetId, PermissionType permission) {
+    PermissionDto permissionDto = PermissionDto.builder().assetId(snippetId).userId(userId).permission(permission).build();
+    String url = permissionManagerUrl + "/api/permission";
     Mono<ResponseEntity<String>> response =
         webClientUtility.putAsync(url, permissionDto, String.class);
     return response.block(Duration.ofSeconds(timeOutInSeconds));
