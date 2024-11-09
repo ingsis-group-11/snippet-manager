@@ -3,6 +3,7 @@ package snippetmanager.services;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -103,18 +104,22 @@ public class FormatterRuleService {
 
   private void createOrUpdateRulesInAssetService(List<RuleDto> rules, String userId) {
     try {
+      Map<String, String> rulesMap =
+              rules.stream()
+                      .collect(Collectors.toMap(RuleDto::getName, rule -> String.valueOf(rule.getValue())));
+
       ObjectMapper objectMapper = new ObjectMapper();
-      String jsonString = objectMapper.writeValueAsString(rules);
+      String jsonString = objectMapper.writeValueAsString(rulesMap);
 
       MultipartFile rulesToJson =
-          new MockMultipartFile(
-              "formatter-rules-" + userId, "rules.json", "application/json", jsonString.getBytes());
+              new MockMultipartFile(
+                      "format-rules-" + userId, "rules.json", "application/json", jsonString.getBytes());
 
       ResponseEntity<String> createAssetResponse =
-          assetManager.createAsset("format-rules", userId, rulesToJson);
+              assetManager.createAsset("format-rules", userId, rulesToJson);
       if (createAssetResponse.getStatusCode().isError()) {
         throw new HttpServerErrorException(
-            createAssetResponse.getStatusCode(), "Error creating asset with formatter rules");
+                createAssetResponse.getStatusCode(), "Error creating asset with formatter rules");
       }
     } catch (Exception e) {
       throw new RuntimeException("Error creating asset with formatter rules", e);
