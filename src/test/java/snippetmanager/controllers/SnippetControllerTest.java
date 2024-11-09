@@ -94,7 +94,8 @@ public class SnippetControllerTest {
 
     when(codeSnippetService.getAllSnippets(0, Integer.MAX_VALUE, userId)).thenReturn(snippets);
 
-    ResponseEntity<List<SnippetSendDto>> response = codeSnippetController.getAllSnippets(0, Integer.MAX_VALUE);
+    ResponseEntity<List<SnippetSendDto>> response =
+        codeSnippetController.getAllSnippets(0, Integer.MAX_VALUE);
 
     assertEquals(HttpStatus.OK, response.getStatusCode());
     assertEquals(snippets, response.getBody());

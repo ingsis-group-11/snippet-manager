@@ -105,21 +105,21 @@ public class FormatterRuleService {
   private void createOrUpdateRulesInAssetService(List<RuleDto> rules, String userId) {
     try {
       Map<String, String> rulesMap =
-              rules.stream()
-                      .collect(Collectors.toMap(RuleDto::getName, rule -> String.valueOf(rule.getValue())));
+          rules.stream()
+              .collect(Collectors.toMap(RuleDto::getName, rule -> String.valueOf(rule.getValue())));
 
       ObjectMapper objectMapper = new ObjectMapper();
       String jsonString = objectMapper.writeValueAsString(rulesMap);
 
       MultipartFile rulesToJson =
-              new MockMultipartFile(
-                      "format-rules-" + userId, "rules.json", "application/json", jsonString.getBytes());
+          new MockMultipartFile(
+              "format-rules-" + userId, "rules.json", "application/json", jsonString.getBytes());
 
       ResponseEntity<String> createAssetResponse =
-              assetManager.createAsset("format-rules", userId, rulesToJson);
+          assetManager.createAsset("format-rules", userId, rulesToJson);
       if (createAssetResponse.getStatusCode().isError()) {
         throw new HttpServerErrorException(
-                createAssetResponse.getStatusCode(), "Error creating asset with formatter rules");
+            createAssetResponse.getStatusCode(), "Error creating asset with formatter rules");
       }
     } catch (Exception e) {
       throw new RuntimeException("Error creating asset with formatter rules", e);
