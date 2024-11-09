@@ -16,6 +16,7 @@ import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
 import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -28,6 +29,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.AbstractTransactionalJUnit4SpringContextTests;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.multipart.MultipartFile;
@@ -39,11 +41,13 @@ import snippetmanager.model.entities.CodeSnippet;
 import snippetmanager.redis.linter.LintProducer;
 import snippetmanager.repositories.CodeSnippetRepository;
 import snippetmanager.util.CodeLanguage;
+import snippetmanager.util.PermissionType;
 import snippetmanager.webservice.WebClientUtility;
 import snippetmanager.webservice.asset.AssetManager;
 import snippetmanager.webservice.permission.PermissionManager;
 import snippetmanager.webservice.printscript.PrintscriptManager;
 
+@ActiveProfiles("test")
 @SpringBootTest
 class CodeSnippetServiceTest extends AbstractTransactionalJUnit4SpringContextTests {
   @MockBean private CodeSnippetRepository codeSnippetRepository;
@@ -58,7 +62,8 @@ class CodeSnippetServiceTest extends AbstractTransactionalJUnit4SpringContextTes
 
   @MockBean private LintProducer lintProducer;
 
-  @Autowired private CodeSnippetService codeSnippetService;
+  @Autowired
+  private CodeSnippetService codeSnippetService;
 
   @BeforeEach
   void setUp() {
@@ -98,7 +103,7 @@ class CodeSnippetServiceTest extends AbstractTransactionalJUnit4SpringContextTes
               return snippet;
             });
 
-    when(permissionManager.createNewPermission(any(String.class), eq(snippetId)))
+    when(permissionManager.createNewPermission(eq(snippetId), any(PermissionType.class)))
         .thenReturn(new ResponseEntity<>("Permission created", HttpStatus.OK));
 
     when(assetManager.createAsset(eq("snippets"), eq(snippetId), any(MultipartFile.class)))
@@ -138,7 +143,7 @@ class CodeSnippetServiceTest extends AbstractTransactionalJUnit4SpringContextTes
     when(webClientUtility.postAsync(anyString(), any(PermissionDto.class), eq(String.class)))
         .thenReturn(mockResponse);
 
-    when(permissionManager.createNewPermission(any(String.class), eq(snippetId)))
+    when(permissionManager.createNewPermission(eq(snippetId), any(PermissionType.class)))
         .thenReturn(new ResponseEntity<>("Permission error", HttpStatus.INTERNAL_SERVER_ERROR));
 
     when(printscriptManager.compile(
@@ -163,7 +168,7 @@ class CodeSnippetServiceTest extends AbstractTransactionalJUnit4SpringContextTes
     codeSnippet.setAssetId(snippetId);
     codeSnippet.setLanguage(CodeLanguage.PRINTSCRIPT);
 
-    when(permissionManager.canRead(eq(userId), eq(snippetId))).thenReturn(true);
+    when(permissionManager.canRead(eq(snippetId))).thenReturn(true);
     when(codeSnippetRepository.findCodeSnippetByAssetId(eq(snippetId)))
         .thenReturn(Optional.of(codeSnippet));
     when(assetManager.getAsset(eq("snippets"), eq(snippetId)))
@@ -180,7 +185,7 @@ class CodeSnippetServiceTest extends AbstractTransactionalJUnit4SpringContextTes
     String snippetId = UUID.randomUUID().toString();
     String userId = "1";
 
-    when(permissionManager.canRead(eq(userId), eq(snippetId))).thenReturn(true);
+    when(permissionManager.canRead(eq(snippetId))).thenReturn(true);
     when(codeSnippetRepository.findById(snippetId)).thenReturn(Optional.empty());
 
     assertThrows(
@@ -195,7 +200,7 @@ class CodeSnippetServiceTest extends AbstractTransactionalJUnit4SpringContextTes
     String snippetId = UUID.randomUUID().toString();
     String userId = "1";
 
-    when(permissionManager.canRead(eq(userId), eq(snippetId))).thenReturn(false);
+    when(permissionManager.canRead(eq(snippetId))).thenReturn(false);
 
     assertThrows(
         PermissionDeniedDataAccessException.class,
@@ -234,7 +239,7 @@ class CodeSnippetServiceTest extends AbstractTransactionalJUnit4SpringContextTes
               return snippet;
             });
 
-    when(permissionManager.canWrite(eq(userId), eq(assetId))).thenReturn(true);
+    when(permissionManager.canWrite(eq(assetId))).thenReturn(true);
     when(assetManager.createAsset(eq("snippets"), eq(assetId), any(MultipartFile.class)))
         .thenReturn(new ResponseEntity<>("Asset updated", HttpStatus.OK));
 
@@ -253,7 +258,7 @@ class CodeSnippetServiceTest extends AbstractTransactionalJUnit4SpringContextTes
     SnippetReceivedDto snippetDto =
         SnippetReceivedDto.builder().language("PRINTSCRIPT").version("1.1").build();
 
-    when(permissionManager.canWrite(eq(userId), eq(snippetId))).thenReturn(true);
+    when(permissionManager.canWrite(eq(snippetId))).thenReturn(true);
     when(codeSnippetRepository.findById(snippetId)).thenReturn(Optional.empty());
 
     assertThrows(
@@ -268,7 +273,7 @@ class CodeSnippetServiceTest extends AbstractTransactionalJUnit4SpringContextTes
     String assetId = "snippet-test";
     String userId = "1";
 
-    when(permissionManager.canDelete(eq(userId), eq(assetId))).thenReturn(true);
+    when(permissionManager.canWrite(eq(assetId))).thenReturn(true);
     when(codeSnippetRepository.findCodeSnippetByAssetId(assetId))
         .thenReturn(Optional.of(new CodeSnippet()));
     when(assetManager.deleteAsset(eq("snippets"), eq(assetId)))
@@ -284,7 +289,7 @@ class CodeSnippetServiceTest extends AbstractTransactionalJUnit4SpringContextTes
     String snippetId = UUID.randomUUID().toString();
     String userId = "1";
 
-    when(permissionManager.canDelete(eq(userId), eq(snippetId))).thenReturn(false);
+    when(permissionManager.canDelete(eq(snippetId))).thenReturn(false);
 
     assertThrows(
         PermissionDeniedDataAccessException.class,

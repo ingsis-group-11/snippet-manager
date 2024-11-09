@@ -92,13 +92,13 @@ public class SnippetControllerTest {
     List<SnippetSendDto> snippets =
         Arrays.asList(SnippetSendDto.builder().build(), SnippetSendDto.builder().build());
 
-    when(codeSnippetService.getAllSnippets(userId)).thenReturn(snippets);
+    when(codeSnippetService.getAllSnippets(0, Integer.MAX_VALUE, userId)).thenReturn(snippets);
 
-    ResponseEntity<List<SnippetSendDto>> response = codeSnippetController.getAllSnippets();
+    ResponseEntity<List<SnippetSendDto>> response = codeSnippetController.getAllSnippets(0, Integer.MAX_VALUE);
 
     assertEquals(HttpStatus.OK, response.getStatusCode());
     assertEquals(snippets, response.getBody());
-    verify(codeSnippetService).getAllSnippets(userId);
+    verify(codeSnippetService).getAllSnippets(0, Integer.MAX_VALUE, userId);
   }
 
   @Test
