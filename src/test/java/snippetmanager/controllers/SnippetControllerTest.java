@@ -107,16 +107,12 @@ public class SnippetControllerTest {
     String snippetId = UUID.randomUUID().toString();
     MultipartFile file = mockMultipartFile("test content");
     String userId = "1";
-    String title = "Updated Title";
-    String version = "1.1";
-    String language = "PRINTSCRIPT";
     String expectedResponse = "Snippet updated successfully";
 
     when(codeSnippetService.updateSnippet(eq(snippetId), eq(userId), any(SnippetReceivedDto.class)))
         .thenReturn(expectedResponse);
 
-    ResponseEntity<String> response =
-        codeSnippetController.updateSnippet(snippetId, file, title, version, language);
+    ResponseEntity<String> response = codeSnippetController.updateSnippet(snippetId, file);
 
     assertEquals(HttpStatus.OK, response.getStatusCode());
     assertEquals(expectedResponse, response.getBody());

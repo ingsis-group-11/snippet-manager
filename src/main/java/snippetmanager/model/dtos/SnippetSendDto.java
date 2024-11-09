@@ -13,4 +13,5 @@ public class SnippetSendDto {
   private String name;
   private String userId;
   private String compliance;
+  private String extension;
 }

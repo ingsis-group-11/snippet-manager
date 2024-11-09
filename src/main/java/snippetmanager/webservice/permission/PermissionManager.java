@@ -43,9 +43,9 @@ public class PermissionManager {
             + "/api/permission"
             + "?from="
             + from
-            + "?to="
+            + "&to="
             + to
-            + "?permissionType="
+            + "&permissionType="
             + permissionType;
     Mono<ResponseEntity<List<String>>> response =
         webClientUtility.getAsync(url, new ParameterizedTypeReference<List<String>>() {});
@@ -68,8 +68,8 @@ public class PermissionManager {
     return response.block(Duration.ofSeconds(timeOutInSeconds));
   }
 
-  public ResponseEntity<String> deletePermission(String userId, String snippetId) {
-    String url = permissionManagerUrl + "/api/permission/" + "user/" + userId + "/" + snippetId;
+  public ResponseEntity<String> deletePermission(String snippetId) {
+    String url = permissionManagerUrl + "/api/permission/" + snippetId;
     Mono<ResponseEntity<String>> response = webClientUtility.deleteAsync(url, String.class);
     return response.block(Duration.ofSeconds(timeOutInSeconds));
   }

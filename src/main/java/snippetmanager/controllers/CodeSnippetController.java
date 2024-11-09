@@ -79,18 +79,8 @@ public class CodeSnippetController {
   // PUT http://localhost:8080/api/snippet/{snippetId}
   @PutMapping("/{snippetId}")
   public ResponseEntity<String> updateSnippet(
-      @PathVariable String snippetId,
-      @RequestParam("content") MultipartFile file,
-      @RequestParam("name") String fileName,
-      @RequestParam("version") String version,
-      @RequestParam("language") String language) {
-    SnippetReceivedDto snippet =
-        SnippetReceivedDto.builder()
-            .content(file)
-            .assetId(fileName)
-            .language(language)
-            .version(version)
-            .build();
+      @PathVariable String snippetId, @RequestParam("content") MultipartFile file) {
+    SnippetReceivedDto snippet = SnippetReceivedDto.builder().content(file).build();
     return ResponseEntity.ok(codeSnippetService.updateSnippet(snippetId, getUserId(), snippet));
   }
 
