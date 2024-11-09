@@ -94,7 +94,7 @@ public class LintingRuleService {
 
   private void publishAllSnippetsToRedis(String userId) {
     codeSnippetService
-        .getAllSnippets(userId)
+        .getAllWriteSnippets(userId)
         .forEach(
             snippet -> {
               lintProducer.publishEvent(

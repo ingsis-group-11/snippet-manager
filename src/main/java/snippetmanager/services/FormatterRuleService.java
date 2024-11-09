@@ -61,7 +61,7 @@ public class FormatterRuleService {
 
   private void publishAllSnippetsToRedis(String userId) {
     codeSnippetService
-        .getAllSnippets(userId)
+        .getAllWriteSnippets(userId)
         .forEach(
             snippet -> {
               formatterProducer.publishEvent(

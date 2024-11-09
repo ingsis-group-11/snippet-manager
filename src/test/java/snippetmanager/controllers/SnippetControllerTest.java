@@ -56,13 +56,14 @@ public class SnippetControllerTest {
     String version = "1.0";
     String title = "Test Title";
     String language = "Java";
+    String extension = "java";
     String expectedResponse = "Snippet created successfully";
 
     when(codeSnippetService.createSnippet(any(SnippetReceivedDto.class), eq(userId)))
         .thenReturn(expectedResponse);
 
     ResponseEntity<String> response =
-        codeSnippetController.createSnippet(file, version, title, language);
+        codeSnippetController.createSnippet(file, version, title, language, extension);
 
     assertEquals(HttpStatus.OK, response.getStatusCode());
     assertEquals(expectedResponse, response.getBody());

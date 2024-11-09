@@ -4,6 +4,7 @@ import jakarta.persistence.EntityNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import org.springframework.dao.PermissionDeniedDataAccessException;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +19,7 @@ import snippetmanager.model.dtos.SnippetSendDto;
 import snippetmanager.model.entities.CodeSnippet;
 import snippetmanager.redis.linter.LintProducer;
 import snippetmanager.repositories.CodeSnippetRepository;
+import snippetmanager.util.PermissionType;
 import snippetmanager.webservice.asset.AssetManager;
 import snippetmanager.webservice.permission.PermissionManager;
 import snippetmanager.webservice.printscript.PrintscriptManager;
@@ -83,7 +85,7 @@ public class CodeSnippetService {
 
   public SnippetSendDto getSnippet(String assetId, String userId) {
 
-    boolean canAccess = canReadSnippet(userId, assetId);
+    boolean canAccess = canReadSnippet(assetId);
     if (!canAccess) {
       throw new PermissionDeniedDataAccessException(
           "You don't have permission to access this snippet",
@@ -101,8 +103,29 @@ public class CodeSnippetService {
     return snippetDto;
   }
 
-  public List<SnippetSendDto> getAllSnippets(String userId) {
-    List<CodeSnippet> codeSnippets = getAllCanReadSnippets(userId);
+  public List<SnippetSendDto> getAllSnippets(Integer from, Integer to, String userId) {
+    List<CodeSnippet> codeSnippets = getAllCanReadSnippets(from, to);
+
+    List<SnippetSendDto> codeSnippetDtos =
+        codeSnippets.stream()
+            .map(
+                codeSnippet -> {
+                  InputStream assetResponse = getAsset(codeSnippet.getAssetId());
+                  MultipartFile asset = toMultipartFile(assetResponse, codeSnippet.getAssetId());
+                  String lintResult = codeSnippet.getResultAsString();
+
+                  SnippetSendDto snippetDto =
+                      convertToSnippetSendDto(codeSnippet, asset, lintResult, userId);
+                  snippetDto.setUserId(userId);
+                  return snippetDto;
+                })
+            .collect(Collectors.toList());
+
+    return codeSnippetDtos;
+  }
+
+  public List<SnippetSendDto> getAllWriteSnippets(String userId) {
+    List<CodeSnippet> codeSnippets = getAllCanWriteSnippets();
 
     List<SnippetSendDto> codeSnippetDtos =
         codeSnippets.stream()
@@ -144,7 +167,7 @@ public class CodeSnippetService {
   }
 
   public String deleteSnippet(String assetId, String userId) {
-    boolean canAccess = canDeleteSnippet(userId, assetId);
+    boolean canAccess = canWriteSnippet(userId, assetId);
     if (!canAccess) {
       throw new PermissionDeniedDataAccessException(
           "You don't have permission to access this snippet",
@@ -165,6 +188,8 @@ public class CodeSnippetService {
     CodeSnippet codeSnippet = new CodeSnippet();
     codeSnippet.setLanguage(snippet.getLanguageInEnum());
     codeSnippet.setVersion(snippet.getVersion());
+    codeSnippet.setName(snippet.getName());
+    codeSnippet.setExtension(snippet.getExtension());
     try {
       codeSnippetRepository.save(codeSnippet);
     } catch (Exception e) {
@@ -186,15 +211,26 @@ public class CodeSnippetService {
         .build();
   }
 
-  private List<CodeSnippet> getAllCanReadSnippets(String userId) {
-    /*
-    return Objects.requireNonNull(permissionManager.getSnippetsUserCanRead(userId).getBody())
+  private List<CodeSnippet> getAllCanReadSnippets(Integer from, Integer to) {
+
+    return Objects.requireNonNull(
+            permissionManager
+                .getSnippetsUserCanRead(from, to, PermissionType.READ.toString())
+                .getBody())
         .stream()
         .map(this::findSnippetByAssetId)
         .collect(Collectors.toList());
+  }
 
-     */
-    return codeSnippetRepository.findAll();
+  private List<CodeSnippet> getAllCanWriteSnippets() {
+
+    return Objects.requireNonNull(
+            permissionManager
+                .getSnippetsUserCanWrite(PermissionType.READ_WRITE.toString())
+                .getBody())
+        .stream()
+        .map(this::findSnippetByAssetId)
+        .collect(Collectors.toList());
   }
 
   private String getContentFromMultipartFile(MultipartFile content) {
@@ -234,19 +270,20 @@ public class CodeSnippetService {
   // ** Permission manager
 
   private ResponseEntity<String> createNewPermission(String userId, String snippetId) {
-    return permissionManager.createNewPermission(userId, snippetId);
+    PermissionType permission = PermissionType.READ_WRITE;
+    return permissionManager.createNewPermission(snippetId, permission);
   }
 
-  private boolean canReadSnippet(String userId, String snippetId) {
-    return permissionManager.canRead(userId, snippetId);
+  private boolean canReadSnippet(String snippetId) {
+    return permissionManager.canRead(snippetId);
   }
 
   private boolean canWriteSnippet(String userId, String snippetId) {
-    return permissionManager.canWrite(userId, snippetId);
+    return permissionManager.canWrite(snippetId);
   }
 
   private boolean canDeleteSnippet(String userId, String snippetId) {
-    return permissionManager.canDelete(userId, snippetId);
+    return permissionManager.canDelete(snippetId);
   }
 
   private ResponseEntity<String> deletePermission(String userId, String snippetId) {

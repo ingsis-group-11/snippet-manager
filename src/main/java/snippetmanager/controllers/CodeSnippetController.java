@@ -64,8 +64,16 @@ public class CodeSnippetController {
 
   // GET http://localhost:8080/api/snippet/
   @GetMapping
-  public ResponseEntity<List<SnippetSendDto>> getAllSnippets() {
-    return ResponseEntity.ok(codeSnippetService.getAllSnippets(getUserId()));
+  public ResponseEntity<List<SnippetSendDto>> getAllSnippets(
+      @RequestParam(value = "from", required = false) Integer from,
+      @RequestParam(value = "to", required = false) Integer to) {
+    if (from == null) {
+      from = 0;
+    }
+    if (to == null) {
+      to = Integer.MAX_VALUE;
+    }
+    return ResponseEntity.ok(codeSnippetService.getAllSnippets(from, to, getUserId()));
   }
 
   // PUT http://localhost:8080/api/snippet/{snippetId}
