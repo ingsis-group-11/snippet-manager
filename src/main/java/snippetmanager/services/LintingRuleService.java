@@ -89,7 +89,16 @@ public class LintingRuleService {
   }
 
   public List<RuleDto> getRules(String userId) {
-    return lintingRuleRepository.findAllByUserId(userId);
+    List<LintingRule> rules = lintingRuleRepository.findAllByUserId(userId);
+    return rules.stream()
+        .map(
+            rule ->
+                RuleDto.builder()
+                    .name(rule.getName())
+                    .value(rule.getValue())
+                    .id(rule.getId())
+                    .build())
+        .collect(Collectors.toList());
   }
 
   private void publishAllSnippetsToRedis(String userId) {

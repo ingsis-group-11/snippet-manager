@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
@@ -56,7 +57,16 @@ public class FormatterRuleService {
   }
 
   public List<RuleDto> getRules(String userId) {
-    return formatterRuleRepository.findAllByUserId(userId);
+    List<FormatterRule> rules = formatterRuleRepository.findAllByUserId(userId);
+    return rules.stream()
+        .map(
+            rule ->
+                RuleDto.builder()
+                    .name(rule.getName())
+                    .value(rule.getValue())
+                    .id(rule.getId())
+                    .build())
+        .collect(Collectors.toList());
   }
 
   private void publishAllSnippetsToRedis(String userId) {

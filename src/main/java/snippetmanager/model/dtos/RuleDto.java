@@ -10,4 +10,5 @@ import lombok.Setter;
 public class RuleDto {
   private String name;
   private String value;
+  private String id;
 }
