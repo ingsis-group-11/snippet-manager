@@ -217,8 +217,7 @@ class CodeSnippetServiceTest extends AbstractTransactionalJUnit4SpringContextTes
     existingSnippet.setVersion("1.1");
     existingSnippet.setLanguage(CodeLanguage.PRINTSCRIPT);
 
-    when(codeSnippetRepository.findById(snippetId))
-        .thenReturn(Optional.of(existingSnippet));
+    when(codeSnippetRepository.findById(snippetId)).thenReturn(Optional.of(existingSnippet));
 
     SnippetReceivedDto snippetDto =
         SnippetReceivedDto.builder()

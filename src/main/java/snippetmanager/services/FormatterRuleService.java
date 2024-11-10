@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatusCode;
@@ -124,11 +123,12 @@ public class FormatterRuleService {
 
   // TODO: Move this method to a utility class
   @NotNull
-  private static MultipartFile getRulesInMultipartFile(List<RuleDto> rules, String userId) throws JsonProcessingException {
+  private static MultipartFile getRulesInMultipartFile(List<RuleDto> rules, String userId)
+      throws JsonProcessingException {
     Map<String, String> rulesMap =
-            rules.stream()
-                    .filter(RuleDto::getIsActive)
-                    .collect(Collectors.toMap(RuleDto::getName, rule -> String.valueOf(rule.getValue())));
+        rules.stream()
+            .filter(RuleDto::getIsActive)
+            .collect(Collectors.toMap(RuleDto::getName, rule -> String.valueOf(rule.getValue())));
 
     ObjectMapper objectMapper = new ObjectMapper();
     String jsonString = objectMapper.writeValueAsString(rulesMap);
