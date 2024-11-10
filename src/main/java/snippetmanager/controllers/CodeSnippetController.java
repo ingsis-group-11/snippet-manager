@@ -89,4 +89,12 @@ public class CodeSnippetController {
   public ResponseEntity<String> deleteSnippet(@PathVariable String snippetId) {
     return ResponseEntity.ok(codeSnippetService.deleteSnippet(snippetId, getUserId()));
   }
+
+  @PutMapping("/{snippetId}")
+  public void testSnippet(@PathVariable String snippetId) {
+    /*
+    return ResponseEntity.ok(codeSnippetService.testSnippet(snippetId, getUserId()));
+
+     */
+  }
 }
