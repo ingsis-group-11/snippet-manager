@@ -98,6 +98,7 @@ public class LintingRuleService {
             rule ->
                 RuleDto.builder()
                     .name(rule.getName())
+                    .isActive(rule.getIsActive())
                     .value(rule.getValue())
                     .id(rule.getId())
                     .build())

@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.dao.PermissionDeniedDataAccessException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockMultipartFile;
@@ -15,11 +16,19 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.multipart.MultipartFile;
+import snippetmanager.model.dtos.LanguagesDto;
 import snippetmanager.model.dtos.SnippetReceivedDto;
 import snippetmanager.model.dtos.SnippetSendDto;
 import snippetmanager.model.entities.CodeSnippet;
+import snippetmanager.model.entities.FormatterRule;
+import snippetmanager.model.entities.Languages;
+import snippetmanager.model.entities.LintingRule;
 import snippetmanager.redis.linter.LintProducer;
 import snippetmanager.repositories.CodeSnippetRepository;
+import snippetmanager.repositories.FormatterRuleRepository;
+import snippetmanager.repositories.LanguagesRepository;
+import snippetmanager.repositories.LintingRuleRepository;
+import snippetmanager.util.DefaultRules;
 import snippetmanager.util.PermissionType;
 import snippetmanager.webservice.asset.AssetManager;
 import snippetmanager.webservice.permission.PermissionManager;
@@ -37,17 +46,37 @@ public class CodeSnippetService {
 
   private LintProducer lintProducer;
 
+  private LintingRuleRepository lintingRuleRepository;
+
+  private FormatterRuleRepository formatterRuleRepository;
+
+  private LintingRuleService lintingRuleService;
+
+  private FormatterRuleService formatterRuleService;
+
+  private LanguagesRepository languagesRepository;
+
   public CodeSnippetService(
       CodeSnippetRepository codeSnippetRepository,
       LintProducer lintProducer,
       PermissionManager permissionManager,
       PrintscriptManager printscriptManager,
-      AssetManager assetManager) {
+      AssetManager assetManager,
+      LintingRuleRepository lintingRuleRepository,
+      FormatterRuleRepository formatterRuleRepository,
+      @Lazy LintingRuleService lintingRuleService,
+      @Lazy FormatterRuleService formatterRuleService,
+      LanguagesRepository languagesRepository) {
     this.lintProducer = lintProducer;
     this.codeSnippetRepository = codeSnippetRepository;
     this.permissionManager = permissionManager;
     this.printscriptManager = printscriptManager;
     this.assetManager = assetManager;
+    this.lintingRuleRepository = lintingRuleRepository;
+    this.formatterRuleRepository = formatterRuleRepository;
+    this.lintingRuleService = lintingRuleService;
+    this.formatterRuleService = formatterRuleService;
+    this.languagesRepository = languagesRepository;
   }
 
   private final String assetManagerContainer = "snippets";
@@ -77,6 +106,17 @@ public class CodeSnippetService {
       TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
       deletePermission(codeSnippet.getAssetId());
       throw new HttpServerErrorException(assetResponse.getStatusCode());
+    }
+
+    List<LintingRule> lintingRules = lintingRuleRepository.findAllByUserId(userId);
+    List<FormatterRule> formatterRules = formatterRuleRepository.findAllByUserId(userId);
+
+    if (lintingRules.isEmpty()) {
+      lintingRuleService.createOrUpdateRules(DefaultRules.getDefaultLinterRules(), userId);
+    }
+
+    if (formatterRules.isEmpty()) {
+      formatterRuleService.createOrUpdateRules(DefaultRules.getDefaultFormatterRules(), userId);
     }
 
     publishToRedis(snippet.getContent(), codeSnippet, userId);
@@ -317,5 +357,17 @@ public class CodeSnippetService {
   private void publishToRedis(MultipartFile content, CodeSnippet codeSnippet, String userId) {
     String result = codeSnippet.getResultAsString();
     lintProducer.publishEvent(convertToSnippetSendDto(codeSnippet, content, result, userId));
+  }
+
+  public List<LanguagesDto> getLanguages() {
+    List<Languages> languages = languagesRepository.findAll();
+    return languages.stream()
+        .map(
+            language ->
+                LanguagesDto.builder()
+                    .language(language.getLanguage())
+                    .extension(language.getExtension())
+                    .build())
+        .collect(Collectors.toList());
   }
 }
