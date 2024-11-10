@@ -22,7 +22,7 @@ spring:
   sql:
     init:
       mode: always
-      data: classpath:init.sql
+      schema-locations: classpath:init.sql
 
 # Configurations for the services
 permission:
