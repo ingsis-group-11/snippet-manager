@@ -148,6 +148,11 @@ public class CodeSnippetService {
 
   @Transactional
   public String updateSnippet(String assetId, String userId, SnippetReceivedDto codeSnippet) {
+    Optional<CodeSnippet> snippet = codeSnippetRepository.findById(assetId);
+    if (snippet.isEmpty()) {
+      throw new EntityNotFoundException("Snippet not found with assetId " + assetId);
+    }
+
     boolean canAccess = canWriteSnippet(userId, assetId);
     if (!canAccess) {
       throw new PermissionDeniedDataAccessException(
@@ -158,11 +163,6 @@ public class CodeSnippetService {
         assetManager.createAsset("snippets", assetId, codeSnippet.getContent());
     if (assetResponse.getStatusCode().isError()) {
       throw new HttpServerErrorException(assetResponse.getStatusCode());
-    }
-
-    Optional<CodeSnippet> snippet = codeSnippetRepository.findById(assetId);
-    if (snippet.isEmpty()) {
-      throw new EntityNotFoundException("Snippet not found with assetId " + assetId);
     }
 
     publishToRedis(codeSnippet.getContent(), snippet.get(), userId);

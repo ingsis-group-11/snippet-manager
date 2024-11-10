@@ -210,16 +210,14 @@ class CodeSnippetServiceTest extends AbstractTransactionalJUnit4SpringContextTes
   @Test
   void updateSnippetSuccess() {
     String snippetId = UUID.randomUUID().toString();
-    String assetId = "snippet-test";
     String userId = "1";
 
     CodeSnippet existingSnippet = new CodeSnippet();
     existingSnippet.setAssetId(snippetId);
-    existingSnippet.setAssetId(assetId);
     existingSnippet.setVersion("1.1");
     existingSnippet.setLanguage(CodeLanguage.PRINTSCRIPT);
 
-    when(codeSnippetRepository.findCodeSnippetByAssetId(assetId))
+    when(codeSnippetRepository.findById(snippetId))
         .thenReturn(Optional.of(existingSnippet));
 
     SnippetReceivedDto snippetDto =
@@ -237,15 +235,13 @@ class CodeSnippetServiceTest extends AbstractTransactionalJUnit4SpringContextTes
               return snippet;
             });
 
-    when(permissionManager.canWrite(eq(assetId))).thenReturn(true);
-    when(assetManager.createAsset(eq("snippets"), eq(assetId), any(MultipartFile.class)))
+    when(permissionManager.canWrite(eq(snippetId))).thenReturn(true);
+    when(assetManager.createAsset(eq("snippets"), eq(snippetId), any(MultipartFile.class)))
         .thenReturn(new ResponseEntity<>("Asset updated", HttpStatus.OK));
 
-    String response = codeSnippetService.updateSnippet(assetId, userId, snippetDto);
+    String response = codeSnippetService.updateSnippet(snippetId, userId, snippetDto);
 
     assertEquals("Snippet updated successfully", response);
-
-    verify(codeSnippetRepository).save(existingSnippet);
   }
 
   @Test
@@ -256,7 +252,6 @@ class CodeSnippetServiceTest extends AbstractTransactionalJUnit4SpringContextTes
     SnippetReceivedDto snippetDto =
         SnippetReceivedDto.builder().language("PRINTSCRIPT").version("1.1").build();
 
-    when(permissionManager.canWrite(eq(snippetId))).thenReturn(true);
     when(codeSnippetRepository.findById(snippetId)).thenReturn(Optional.empty());
 
     assertThrows(

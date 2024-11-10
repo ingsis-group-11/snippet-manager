@@ -1,11 +1,14 @@
 package snippetmanager.services;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
@@ -46,6 +49,7 @@ public class LintingRuleService {
       Optional<LintingRule> rule = searchRule(ruleDto.getName(), userId);
       if (rule.isPresent()) {
         rule.get().setValue(ruleDto.getValue());
+        rule.get().setIsActive(ruleDto.getIsActive());
         try {
           lintingRuleRepository.save(rule.get());
         } catch (Exception e) {
@@ -121,6 +125,7 @@ public class LintingRuleService {
     newRule.setName(ruleDto.getName());
     newRule.setValue(ruleDto.getValue());
     newRule.setUserId(userId);
+    newRule.setIsActive(ruleDto.getIsActive());
     try {
       lintingRuleRepository.save(newRule);
     } catch (Exception e) {
@@ -135,16 +140,7 @@ public class LintingRuleService {
 
   private void createOrUpdateRulesInAssetService(List<RuleDto> rules, String userId) {
     try {
-      Map<String, String> rulesMap =
-          rules.stream()
-              .collect(Collectors.toMap(RuleDto::getName, rule -> String.valueOf(rule.getValue())));
-
-      ObjectMapper objectMapper = new ObjectMapper();
-      String jsonString = objectMapper.writeValueAsString(rulesMap);
-
-      MultipartFile rulesToJson =
-          new MockMultipartFile(
-              "linting-rules-" + userId, "rules.json", "application/json", jsonString.getBytes());
+      MultipartFile rulesToJson = getRulesInMultipartFile(rules, userId);
 
       ResponseEntity<String> createAssetResponse =
           assetManager.createAsset("lint-rules", userId, rulesToJson);
@@ -155,5 +151,22 @@ public class LintingRuleService {
     } catch (Exception e) {
       throw new RuntimeException("Error creating asset with linting rules", e);
     }
+  }
+
+  // TODO: Move this method to a utility class
+  @NotNull
+  private static MultipartFile getRulesInMultipartFile(List<RuleDto> rules, String userId) throws JsonProcessingException {
+    Map<String, String> rulesMap =
+            rules.stream()
+                    .filter(RuleDto::getIsActive)
+                    .collect(Collectors.toMap(RuleDto::getName, rule -> String.valueOf(rule.getValue())));
+
+    ObjectMapper objectMapper = new ObjectMapper();
+    String jsonString = objectMapper.writeValueAsString(rulesMap);
+
+    MultipartFile rulesToJson =
+            new MockMultipartFile(
+                    "lint-rules-" + userId, "rules.json", "application/json", jsonString.getBytes());
+    return rulesToJson;
   }
 }

@@ -1,11 +1,14 @@
 package snippetmanager.services;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
@@ -42,6 +45,7 @@ public class FormatterRuleService {
       Optional<FormatterRule> rule = searchRule(ruleDto.getName(), userId);
       if (rule.isPresent()) {
         rule.get().setValue(ruleDto.getValue());
+        rule.get().setIsActive(ruleDto.getIsActive());
         try {
           formatterRuleRepository.save(rule.get());
         } catch (Exception e) {
@@ -90,6 +94,7 @@ public class FormatterRuleService {
     newRule.setName(ruleDto.getName());
     newRule.setValue(ruleDto.getValue());
     newRule.setUserId(userId);
+    newRule.setIsActive(ruleDto.getIsActive());
     try {
       formatterRuleRepository.save(newRule);
     } catch (Exception e) {
@@ -104,16 +109,7 @@ public class FormatterRuleService {
 
   private void createOrUpdateRulesInAssetService(List<RuleDto> rules, String userId) {
     try {
-      Map<String, String> rulesMap =
-          rules.stream()
-              .collect(Collectors.toMap(RuleDto::getName, rule -> String.valueOf(rule.getValue())));
-
-      ObjectMapper objectMapper = new ObjectMapper();
-      String jsonString = objectMapper.writeValueAsString(rulesMap);
-
-      MultipartFile rulesToJson =
-          new MockMultipartFile(
-              "format-rules-" + userId, "rules.json", "application/json", jsonString.getBytes());
+      MultipartFile rulesToJson = getRulesInMultipartFile(rules, userId);
 
       ResponseEntity<String> createAssetResponse =
           assetManager.createAsset("format-rules", userId, rulesToJson);
@@ -124,5 +120,22 @@ public class FormatterRuleService {
     } catch (Exception e) {
       throw new RuntimeException("Error creating asset with formatter rules", e);
     }
+  }
+
+  // TODO: Move this method to a utility class
+  @NotNull
+  private static MultipartFile getRulesInMultipartFile(List<RuleDto> rules, String userId) throws JsonProcessingException {
+    Map<String, String> rulesMap =
+            rules.stream()
+                    .filter(RuleDto::getIsActive)
+                    .collect(Collectors.toMap(RuleDto::getName, rule -> String.valueOf(rule.getValue())));
+
+    ObjectMapper objectMapper = new ObjectMapper();
+    String jsonString = objectMapper.writeValueAsString(rulesMap);
+
+    MultipartFile rulesToJson =
+        new MockMultipartFile(
+            "format-rules-" + userId, "rules.json", "application/json", jsonString.getBytes());
+    return rulesToJson;
   }
 }
