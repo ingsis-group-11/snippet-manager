@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 FROM gradle:8.10.1-jdk21 AS build
 WORKDIR /home/gradle/src
 COPY . .
@@ -7,5 +8,5 @@ RUN --mount=type=secret,id=gpr_user,env=USERNAME,required \
 FROM openjdk:21-jdk-slim
 EXPOSE 8080
 RUN mkdir /app
-COPY --from=build /home/gradle/src/build/libs/*.jar /app/snippet-manager-service.jar
-ENTRYPOINT ["java", "-jar", "-Dspring.profiles.active=production","/app/snippet-manager-service.jar"]
+COPY --from=build /home/gradle/src/build/libs/*.jar /app/printscript-service.jar
+ENTRYPOINT ["java", "-jar", "-Dspring.profiles.active=production", "/app/printscript-service.jar"]
