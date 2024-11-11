@@ -18,3 +18,4 @@ SELECT 'PrintScript 1.0', 'prs'
 WHERE NOT EXISTS (
     SELECT 1 FROM languages WHERE language = 'PrintScript 1.0' AND extension = 'prs'
 );
+
