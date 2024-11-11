@@ -58,3 +58,4 @@ redis:
 
 server:
   port: ${DOCKER_PORT:8000}
+
