@@ -15,6 +15,8 @@ public class ConnectionFactory {
   public ConnectionFactory(
       @Value("${spring.data.redis.host}") String hostName,
       @Value("${spring.data.redis.port}") int port) {
+    System.out.println("REIDS_HOST:" + hostName);
+    System.out.println("REDIS_PORT:" + port);
     this.hostName = hostName;
     this.port = port;
   }
