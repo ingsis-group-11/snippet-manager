@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import reactor.core.publisher.Mono;
-import snippetmanager.util.CodeLanguage;
+import snippetmanager.util.enums.CodeLanguage;
 import snippetmanager.webservice.WebClientUtility;
 
 @Component

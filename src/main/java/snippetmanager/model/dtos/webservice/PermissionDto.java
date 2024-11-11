@@ -3,7 +3,7 @@ package snippetmanager.model.dtos.webservice;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
-import snippetmanager.util.PermissionType;
+import snippetmanager.util.enums.PermissionType;
 
 @Builder
 @Getter

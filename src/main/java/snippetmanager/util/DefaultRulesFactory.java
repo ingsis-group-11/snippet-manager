@@ -3,7 +3,7 @@ package snippetmanager.util;
 import java.util.List;
 import snippetmanager.model.dtos.RuleDto;
 
-public class DefaultRules {
+public class DefaultRulesFactory {
 
   public static List<RuleDto> getDefaultFormatterRules() {
     return List.of(
@@ -31,12 +31,12 @@ public class DefaultRules {
     return List.of(
         RuleDto.builder()
             .name("mandatory-variable-or-literal-in-println")
-            .value("true")
+            .value("false")
             .isActive(false)
             .build(),
         RuleDto.builder()
             .name("mandatory-variable-or-literal-in-readInput")
-            .value("true")
+            .value("false")
             .isActive(false)
             .build(),
         RuleDto.builder().name("identifier_format").value("camel case").isActive(false).build());

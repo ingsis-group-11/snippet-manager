@@ -28,8 +28,8 @@ import snippetmanager.repositories.CodeSnippetRepository;
 import snippetmanager.repositories.FormatterRuleRepository;
 import snippetmanager.repositories.LanguagesRepository;
 import snippetmanager.repositories.LintingRuleRepository;
-import snippetmanager.util.DefaultRules;
-import snippetmanager.util.PermissionType;
+import snippetmanager.util.DefaultRulesFactory;
+import snippetmanager.util.enums.PermissionType;
 import snippetmanager.webservice.asset.AssetManager;
 import snippetmanager.webservice.permission.PermissionManager;
 import snippetmanager.webservice.printscript.PrintscriptManager;
@@ -108,17 +108,7 @@ public class CodeSnippetService {
       throw new HttpServerErrorException(assetResponse.getStatusCode());
     }
 
-    List<LintingRule> lintingRules = lintingRuleRepository.findAllByUserId(userId);
-    List<FormatterRule> formatterRules = formatterRuleRepository.findAllByUserId(userId);
-
-    if (lintingRules.isEmpty()) {
-      lintingRuleService.createOrUpdateRules(DefaultRules.getDefaultLinterRules(), userId);
-    }
-
-    if (formatterRules.isEmpty()) {
-      formatterRuleService.createOrUpdateRules(DefaultRules.getDefaultFormatterRules(), userId);
-    }
-
+    createDefaultRulesIfNeeded(userId);
     publishToRedis(snippet.getContent(), codeSnippet, userId);
 
     return "Snippet created successfully";
@@ -303,6 +293,20 @@ public class CodeSnippetService {
         .findCodeSnippetByAssetId(assetId)
         .orElseThrow(
             () -> new EntityNotFoundException("Snippet not found with assetId " + assetId));
+  }
+
+  private void createDefaultRulesIfNeeded(String userId) {
+    List<LintingRule> lintingRules = lintingRuleRepository.findAllByUserId(userId);
+    List<FormatterRule> formatterRules = formatterRuleRepository.findAllByUserId(userId);
+
+    if (lintingRules.isEmpty()) {
+      lintingRuleService.createOrUpdateRules(DefaultRulesFactory.getDefaultLinterRules(), userId);
+    }
+
+    if (formatterRules.isEmpty()) {
+      formatterRuleService.createOrUpdateRules(
+          DefaultRulesFactory.getDefaultFormatterRules(), userId);
+    }
   }
 
   // ** Printscript manager

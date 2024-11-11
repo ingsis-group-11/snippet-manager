@@ -13,7 +13,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ActiveProfiles;
 import snippetmanager.model.entities.CodeSnippet;
-import snippetmanager.util.CodeLanguage;
+import snippetmanager.util.enums.CodeLanguage;
 
 @DataJpaTest
 @ActiveProfiles("test")

@@ -23,6 +23,7 @@ import snippetmanager.model.entities.LintingRule;
 import snippetmanager.redis.linter.LintProducer;
 import snippetmanager.repositories.CodeSnippetRepository;
 import snippetmanager.repositories.LintingRuleRepository;
+import snippetmanager.util.DefaultRulesFactory;
 import snippetmanager.webservice.asset.AssetManager;
 
 @Service
@@ -42,7 +43,6 @@ public class LintingRuleService {
     this.lintProducer = lintProducer;
   }
 
-  @Transactional
   public String createOrUpdateRules(List<RuleDto> rules, String userId) {
     for (RuleDto ruleDto : rules) {
       Optional<LintingRule> rule = searchRule(ruleDto.getName(), userId);
@@ -92,6 +92,7 @@ public class LintingRuleService {
   }
 
   public List<RuleDto> getRules(String userId) {
+    createDefaultRulesIfNeeded(userId);
     List<LintingRule> rules = lintingRuleRepository.findAllByUserId(userId);
     return rules.stream()
         .map(
@@ -103,6 +104,16 @@ public class LintingRuleService {
                     .id(rule.getId())
                     .build())
         .collect(Collectors.toList());
+  }
+
+  // ** Internal methods
+
+  private void createDefaultRulesIfNeeded(String userId) {
+    List<LintingRule> lintingRules = lintingRuleRepository.findAllByUserId(userId);
+
+    if (lintingRules.isEmpty()) {
+      this.createOrUpdateRules(DefaultRulesFactory.getDefaultFormatterRules(), userId);
+    }
   }
 
   private void publishAllSnippetsToRedis(String userId) {

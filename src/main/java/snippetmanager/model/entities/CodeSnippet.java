@@ -11,8 +11,8 @@ import jakarta.persistence.PreUpdate;
 import java.time.LocalDateTime;
 import lombok.Getter;
 import lombok.Setter;
-import snippetmanager.util.CodeLanguage;
-import snippetmanager.util.LintResult;
+import snippetmanager.util.enums.CodeLanguage;
+import snippetmanager.util.enums.LintResult;
 
 @Entity
 @Getter

@@ -2,7 +2,6 @@ package snippetmanager.services;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.transaction.Transactional;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -21,6 +20,7 @@ import snippetmanager.model.dtos.SnippetSendDto;
 import snippetmanager.model.entities.FormatterRule;
 import snippetmanager.redis.formatter.FormatterProducer;
 import snippetmanager.repositories.FormatterRuleRepository;
+import snippetmanager.util.DefaultRulesFactory;
 import snippetmanager.webservice.asset.AssetManager;
 
 @Service
@@ -38,7 +38,6 @@ public class FormatterRuleService {
     this.formatterProducer = formatterProducer;
   }
 
-  @Transactional
   public String createOrUpdateRules(List<RuleDto> rules, String userId) {
     for (RuleDto ruleDto : rules) {
       Optional<FormatterRule> rule = searchRule(ruleDto.getName(), userId);
@@ -48,7 +47,6 @@ public class FormatterRuleService {
         try {
           formatterRuleRepository.save(rule.get());
         } catch (Exception e) {
-          TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
           throw new HttpServerErrorException(HttpStatusCode.valueOf(500), "Error updating rules");
         }
       } else {
@@ -61,6 +59,7 @@ public class FormatterRuleService {
   }
 
   public List<RuleDto> getRules(String userId) {
+    createDefaultRulesIfNeeded(userId);
     List<FormatterRule> rules = formatterRuleRepository.findAllByUserId(userId);
     return rules.stream()
         .map(
@@ -72,6 +71,16 @@ public class FormatterRuleService {
                     .id(rule.getId())
                     .build())
         .collect(Collectors.toList());
+  }
+
+  // ** Internal methods
+
+  private void createDefaultRulesIfNeeded(String userId) {
+    List<FormatterRule> formatterRules = formatterRuleRepository.findAllByUserId(userId);
+
+    if (formatterRules.isEmpty()) {
+      this.createOrUpdateRules(DefaultRulesFactory.getDefaultFormatterRules(), userId);
+    }
   }
 
   private void publishAllSnippetsToRedis(String userId) {

@@ -10,7 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 import snippetmanager.model.dtos.webservice.PermissionDto;
-import snippetmanager.util.PermissionType;
+import snippetmanager.util.enums.PermissionType;
 import snippetmanager.webservice.WebClientUtility;
 
 @Component
