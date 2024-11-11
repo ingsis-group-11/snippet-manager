@@ -1,6 +1,6 @@
 FROM gradle:8.10.1-jdk21 AS build
-COPY  . /home/gradle/src
 WORKDIR /home/gradle/src
+COPY . .
 RUN --mount=type=secret,id=gpr_user,env=USERNAME,required \
     --mount=type=secret,id=gpr_token,env=TOKEN,required \
     gradle assemble --no-daemon
