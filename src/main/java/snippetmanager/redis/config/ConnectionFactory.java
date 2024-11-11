@@ -13,7 +13,8 @@ public class ConnectionFactory {
   private final int port;
 
   public ConnectionFactory(
-      @Value("${redis.host}") String hostName, @Value("${redis.port}") int port) {
+      @Value("${spring.data.redis.host}") String hostName,
+      @Value("${spring.data.redis.port}") int port) {
     this.hostName = hostName;
     this.port = port;
   }

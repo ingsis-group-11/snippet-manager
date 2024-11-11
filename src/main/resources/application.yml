@@ -10,6 +10,10 @@ spring:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:snippet-manager-db}}
     username: ${SPRING_DATASOURCE_USERNAME:${DB_USER:admin}}
     password: ${SPRING_DATASOURCE_PASSWORD:${DB_PASSWORD:admin}}
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
   jpa:
     hibernate:
       ddl-auto: update
@@ -42,8 +46,6 @@ auth0:
 
 # Redis configuration
 redis:
-  host: ${REDIS_HOST:localhost}
-  port: ${REDIS_PORT:6379}
   producer:
     lint: "lint-queue"
     formatter: "formatter-queue"
