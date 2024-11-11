@@ -68,6 +68,7 @@ public class FormatterRuleService {
                 RuleDto.builder()
                     .name(rule.getName())
                     .value(rule.getValue())
+                    .isActive(rule.getIsActive())
                     .id(rule.getId())
                     .build())
         .collect(Collectors.toList());

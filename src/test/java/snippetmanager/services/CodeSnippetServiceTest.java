@@ -12,6 +12,8 @@ import static org.mockito.Mockito.when;
 import jakarta.persistence.EntityNotFoundException;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,8 +39,13 @@ import snippetmanager.model.dtos.SnippetReceivedDto;
 import snippetmanager.model.dtos.SnippetSendDto;
 import snippetmanager.model.dtos.webservice.PermissionDto;
 import snippetmanager.model.entities.CodeSnippet;
+import snippetmanager.model.entities.FormatterRule;
+import snippetmanager.model.entities.LintingRule;
 import snippetmanager.redis.linter.LintProducer;
 import snippetmanager.repositories.CodeSnippetRepository;
+import snippetmanager.repositories.FormatterRuleRepository;
+import snippetmanager.repositories.LanguagesRepository;
+import snippetmanager.repositories.LintingRuleRepository;
 import snippetmanager.util.CodeLanguage;
 import snippetmanager.util.PermissionType;
 import snippetmanager.webservice.WebClientUtility;
@@ -61,6 +68,16 @@ class CodeSnippetServiceTest extends AbstractTransactionalJUnit4SpringContextTes
 
   @MockBean private LintProducer lintProducer;
 
+  @MockBean private LintingRuleRepository lintingRuleRepository;
+
+  @MockBean private FormatterRuleRepository formatterRuleRepository;
+
+  @MockBean private LintingRuleService lintingRuleService;
+
+  @MockBean private FormatterRuleService formatterRuleService;
+
+  @MockBean private LanguagesRepository languagesRepository;
+
   @Autowired private CodeSnippetService codeSnippetService;
 
   @BeforeEach
@@ -80,18 +97,26 @@ class CodeSnippetServiceTest extends AbstractTransactionalJUnit4SpringContextTes
 
   @Test
   void createSnippetSuccess() {
-    MultipartFile contentFile = mockMultipartFile("test content");
-    String snippetId = UUID.randomUUID().toString();
-
-    SnippetReceivedDto snippetDto =
-        SnippetReceivedDto.builder()
-            .language("PRINTSCRIPT")
-            .version("1.1")
-            .content(contentFile)
-            .build();
 
     when(printscriptManager.compile(anyString(), any(CodeLanguage.class), anyString()))
         .thenReturn(new ResponseEntity<>("Snippet compiled successfully", HttpStatus.OK));
+
+    LintingRule lintingRule = new LintingRule();
+    lintingRule.setName("Test");
+    lintingRule.setValue("false");
+    lintingRule.setIsActive(true);
+    lintingRule.setUserId("1");
+
+    FormatterRule formatterRule = new FormatterRule();
+    formatterRule.setName("Test");
+    formatterRule.setValue("false");
+    formatterRule.setIsActive(true);
+    formatterRule.setUserId("1");
+
+    when(lintingRuleRepository.findAll()).thenReturn(new ArrayList<>(List.of(lintingRule)));
+    when(formatterRuleRepository.findAll()).thenReturn(new ArrayList<>(List.of(formatterRule)));
+
+    String snippetId = UUID.randomUUID().toString();
 
     when(codeSnippetRepository.save(any(CodeSnippet.class)))
         .thenAnswer(
@@ -106,6 +131,15 @@ class CodeSnippetServiceTest extends AbstractTransactionalJUnit4SpringContextTes
 
     when(assetManager.createAsset(eq("snippets"), eq(snippetId), any(MultipartFile.class)))
         .thenReturn(new ResponseEntity<>("Asset created", HttpStatus.OK));
+
+    MultipartFile contentFile = mockMultipartFile("test content");
+
+    SnippetReceivedDto snippetDto =
+        SnippetReceivedDto.builder()
+            .language("PRINTSCRIPT")
+            .version("1.1")
+            .content(contentFile)
+            .build();
 
     String response = codeSnippetService.createSnippet(snippetDto, "1");
 

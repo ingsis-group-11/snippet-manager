@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+import snippetmanager.model.dtos.LanguagesDto;
 import snippetmanager.model.dtos.SnippetReceivedDto;
 import snippetmanager.model.dtos.SnippetSendDto;
 import snippetmanager.services.CodeSnippetService;
@@ -41,10 +42,11 @@ public class CodeSnippetController {
   @PutMapping
   public ResponseEntity<String> createSnippet(
       @RequestParam("content") MultipartFile file,
-      @RequestParam("version") String version,
       @RequestParam("name") String fileName,
       @RequestParam("language") String language,
       @RequestParam("extension") String extension) {
+    String version = language.substring(language.lastIndexOf(" ") + 1);
+    language = language.substring(0, language.lastIndexOf(" "));
     SnippetReceivedDto snippet =
         SnippetReceivedDto.builder()
             .content(file)
@@ -90,11 +92,8 @@ public class CodeSnippetController {
     return ResponseEntity.ok(codeSnippetService.deleteSnippet(snippetId, getUserId()));
   }
 
-  @PutMapping("/{snippetId}")
-  public void testSnippet(@PathVariable String snippetId) {
-    /*
-    return ResponseEntity.ok(codeSnippetService.testSnippet(snippetId, getUserId()));
-
-     */
+  @GetMapping("/languages")
+  public ResponseEntity<List<LanguagesDto>> getLanguages() {
+    return ResponseEntity.ok(codeSnippetService.getLanguages());
   }
 }

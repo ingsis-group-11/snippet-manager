@@ -23,11 +23,13 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.web.multipart.MultipartFile;
 import snippetmanager.model.dtos.SnippetReceivedDto;
 import snippetmanager.model.dtos.SnippetSendDto;
 import snippetmanager.services.CodeSnippetService;
 
+@ActiveProfiles("test")
 public class SnippetControllerTest {
 
   @Mock private CodeSnippetService codeSnippetService;
@@ -53,17 +55,16 @@ public class SnippetControllerTest {
   void createSnippet() {
     MultipartFile file = mock(MultipartFile.class);
     String userId = "1";
-    String version = "1.0";
     String title = "Test Title";
-    String language = "Java";
-    String extension = "java";
+    String language = "Printscript 1.1";
+    String extension = "ps";
     String expectedResponse = "Snippet created successfully";
 
     when(codeSnippetService.createSnippet(any(SnippetReceivedDto.class), eq(userId)))
         .thenReturn(expectedResponse);
 
     ResponseEntity<String> response =
-        codeSnippetController.createSnippet(file, version, title, language, extension);
+        codeSnippetController.createSnippet(file, title, language, extension);
 
     assertEquals(HttpStatus.OK, response.getStatusCode());
     assertEquals(expectedResponse, response.getBody());
