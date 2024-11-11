@@ -13,7 +13,8 @@ public class LintProducer extends RedisStreamProducer implements ProducerInterfa
 
   @Autowired
   public LintProducer(
-      @Value("${stream.key.lint}") String streamKey, ReactiveRedisTemplate<String, String> redis) {
+      @Value("${redis.producer.lint}") String streamKey,
+      ReactiveRedisTemplate<String, String> redis) {
     super(streamKey, redis);
   }
 

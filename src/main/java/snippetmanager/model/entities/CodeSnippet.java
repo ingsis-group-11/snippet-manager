@@ -9,10 +9,10 @@ import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import java.time.LocalDateTime;
-import java.util.UUID;
 import lombok.Getter;
 import lombok.Setter;
 import snippetmanager.util.CodeLanguage;
+import snippetmanager.util.LintResult;
 
 @Entity
 @Getter
@@ -20,22 +20,37 @@ import snippetmanager.util.CodeLanguage;
 public class CodeSnippet {
   @Id
   @GeneratedValue(strategy = GenerationType.UUID)
-  private String id;
+  private String assetId;
 
-  private String assetId = UUID.randomUUID().toString();
+  private String name;
+  private String extension;
 
   @Enumerated(EnumType.STRING)
   private CodeLanguage language;
 
   private String version;
-
   private LocalDateTime createdAt;
   private LocalDateTime updatedAt;
+
+  @Enumerated(EnumType.STRING)
+  private LintResult lintResult;
 
   @PrePersist
   protected void onCreate() {
     createdAt = LocalDateTime.now();
     updatedAt = createdAt;
+  }
+
+  public void setResultAsString(String result) {
+    String resultEnum = result.toUpperCase();
+    this.lintResult = LintResult.valueOf(resultEnum);
+  }
+
+  public String getResultAsString() {
+    if (lintResult == null) {
+      return null;
+    }
+    return lintResult.toString();
   }
 
   @PreUpdate

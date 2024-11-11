@@ -12,13 +12,16 @@ import static org.mockito.Mockito.when;
 import jakarta.persistence.EntityNotFoundException;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.dao.PermissionDeniedDataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -27,6 +30,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.junit4.AbstractTransactionalJUnit4SpringContextTests;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Mono;
@@ -34,26 +39,46 @@ import snippetmanager.model.dtos.SnippetReceivedDto;
 import snippetmanager.model.dtos.SnippetSendDto;
 import snippetmanager.model.dtos.webservice.PermissionDto;
 import snippetmanager.model.entities.CodeSnippet;
+import snippetmanager.model.entities.FormatterRule;
+import snippetmanager.model.entities.LintingRule;
+import snippetmanager.redis.linter.LintProducer;
 import snippetmanager.repositories.CodeSnippetRepository;
+import snippetmanager.repositories.FormatterRuleRepository;
+import snippetmanager.repositories.LanguagesRepository;
+import snippetmanager.repositories.LintingRuleRepository;
 import snippetmanager.util.CodeLanguage;
+import snippetmanager.util.PermissionType;
 import snippetmanager.webservice.WebClientUtility;
 import snippetmanager.webservice.asset.AssetManager;
 import snippetmanager.webservice.permission.PermissionManager;
 import snippetmanager.webservice.printscript.PrintscriptManager;
 
-class CodeSnippetServiceTest {
+@ActiveProfiles("test")
+@SpringBootTest
+class CodeSnippetServiceTest extends AbstractTransactionalJUnit4SpringContextTests {
+  @MockBean private CodeSnippetRepository codeSnippetRepository;
 
-  @Mock private CodeSnippetRepository codeSnippetRepository;
+  @MockBean private WebClientUtility webClientUtility;
 
-  @Mock private WebClientUtility webClientUtility;
+  @MockBean private PermissionManager permissionManager;
 
-  @Mock private PermissionManager permissionManager;
+  @MockBean private AssetManager assetManager;
 
-  @Mock private AssetManager assetManager;
+  @MockBean private PrintscriptManager printscriptManager;
 
-  @Mock private PrintscriptManager printscriptManager;
+  @MockBean private LintProducer lintProducer;
 
-  @InjectMocks private CodeSnippetService codeSnippetService;
+  @MockBean private LintingRuleRepository lintingRuleRepository;
+
+  @MockBean private FormatterRuleRepository formatterRuleRepository;
+
+  @MockBean private LintingRuleService lintingRuleService;
+
+  @MockBean private FormatterRuleService formatterRuleService;
+
+  @MockBean private LanguagesRepository languagesRepository;
+
+  @Autowired private CodeSnippetService codeSnippetService;
 
   @BeforeEach
   void setUp() {
@@ -72,45 +97,56 @@ class CodeSnippetServiceTest {
 
   @Test
   void createSnippetSuccess() {
-    MultipartFile contentFile = mockMultipartFile("test content");
-    String snippetId = "snippet-test";
 
-    SnippetReceivedDto snippetDto =
-        SnippetReceivedDto.builder()
-            .assetId(snippetId)
-            .language("PRINTSCRIPT")
-            .version("1.1")
-            .content(contentFile)
-            .build();
+    when(printscriptManager.compile(anyString(), any(CodeLanguage.class), anyString()))
+        .thenReturn(new ResponseEntity<>("Snippet compiled successfully", HttpStatus.OK));
+
+    LintingRule lintingRule = new LintingRule();
+    lintingRule.setName("Test");
+    lintingRule.setValue("false");
+    lintingRule.setIsActive(true);
+    lintingRule.setUserId("1");
+
+    FormatterRule formatterRule = new FormatterRule();
+    formatterRule.setName("Test");
+    formatterRule.setValue("false");
+    formatterRule.setIsActive(true);
+    formatterRule.setUserId("1");
+
+    when(lintingRuleRepository.findAll()).thenReturn(new ArrayList<>(List.of(lintingRule)));
+    when(formatterRuleRepository.findAll()).thenReturn(new ArrayList<>(List.of(formatterRule)));
+
+    String snippetId = UUID.randomUUID().toString();
 
     when(codeSnippetRepository.save(any(CodeSnippet.class)))
         .thenAnswer(
             invocation -> {
               CodeSnippet snippet = invocation.getArgument(0);
-              snippet.setId(snippetId);
+              snippet.setAssetId(snippetId);
               return snippet;
             });
+
+    when(permissionManager.createNewPermission(eq(snippetId), any(PermissionType.class)))
+        .thenReturn(new ResponseEntity<>("Permission created", HttpStatus.OK));
 
     when(assetManager.createAsset(eq("snippets"), eq(snippetId), any(MultipartFile.class)))
         .thenReturn(new ResponseEntity<>("Asset created", HttpStatus.OK));
 
-    Mono<ResponseEntity<String>> mockResponse =
-        Mono.just(new ResponseEntity<>("Permission granted", HttpStatus.OK));
-    when(webClientUtility.postAsync(anyString(), any(PermissionDto.class), eq(String.class)))
-        .thenReturn(mockResponse);
+    MultipartFile contentFile = mockMultipartFile("test content");
 
-    when(permissionManager.createNewPermission(any(String.class), eq(snippetId)))
-        .thenReturn(new ResponseEntity<>("Permission granted", HttpStatus.OK));
-
-    when(printscriptManager.compile(
-            eq(snippetDto.getContentInString()),
-            eq(snippetDto.getLanguageInEnum()),
-            eq(snippetDto.getVersion())))
-        .thenReturn(new ResponseEntity<>("Snippet compiled successfully", HttpStatus.OK));
+    SnippetReceivedDto snippetDto =
+        SnippetReceivedDto.builder()
+            .language("PRINTSCRIPT")
+            .version("1.1")
+            .content(contentFile)
+            .build();
 
     String response = codeSnippetService.createSnippet(snippetDto, "1");
 
     assertEquals("Snippet created successfully", response);
+    verify(printscriptManager).compile(anyString(), any(CodeLanguage.class), anyString());
+    verify(codeSnippetRepository).save(any(CodeSnippet.class));
+    verify(assetManager).createAsset(eq("snippets"), eq(snippetId), any(MultipartFile.class));
   }
 
   @Test
@@ -130,7 +166,7 @@ class CodeSnippetServiceTest {
         .thenAnswer(
             invocation -> {
               CodeSnippet snippet = invocation.getArgument(0);
-              snippet.setId(snippetId);
+              snippet.setAssetId(snippetId);
               return snippet;
             });
 
@@ -139,7 +175,7 @@ class CodeSnippetServiceTest {
     when(webClientUtility.postAsync(anyString(), any(PermissionDto.class), eq(String.class)))
         .thenReturn(mockResponse);
 
-    when(permissionManager.createNewPermission(any(String.class), eq(snippetId)))
+    when(permissionManager.createNewPermission(eq(snippetId), any(PermissionType.class)))
         .thenReturn(new ResponseEntity<>("Permission error", HttpStatus.INTERNAL_SERVER_ERROR));
 
     when(printscriptManager.compile(
@@ -158,23 +194,21 @@ class CodeSnippetServiceTest {
   @Test
   void getSnippetSuccess() {
     String snippetId = UUID.randomUUID().toString();
-    String assetId = "snippet-test";
     String userId = "1";
 
     CodeSnippet codeSnippet = new CodeSnippet();
-    codeSnippet.setId(snippetId);
-    codeSnippet.setAssetId(assetId);
+    codeSnippet.setAssetId(snippetId);
     codeSnippet.setLanguage(CodeLanguage.PRINTSCRIPT);
 
-    when(permissionManager.canRead(eq(userId), eq(assetId))).thenReturn(true);
-    when(codeSnippetRepository.findCodeSnippetByAssetId(eq(assetId)))
+    when(permissionManager.canRead(eq(snippetId))).thenReturn(true);
+    when(codeSnippetRepository.findCodeSnippetByAssetId(eq(snippetId)))
         .thenReturn(Optional.of(codeSnippet));
-    when(assetManager.getAsset(eq("snippets"), eq(assetId)))
+    when(assetManager.getAsset(eq("snippets"), eq(snippetId)))
         .thenReturn(new ByteArrayInputStream("test content".getBytes()));
 
-    SnippetSendDto result = codeSnippetService.getSnippet(assetId, userId);
+    SnippetSendDto result = codeSnippetService.getSnippet(snippetId, userId);
 
-    assertEquals(assetId, result.getAssetId());
+    assertEquals(snippetId, result.getAssetId());
     assertEquals("PRINTSCRIPT", result.getLanguage());
   }
 
@@ -183,7 +217,7 @@ class CodeSnippetServiceTest {
     String snippetId = UUID.randomUUID().toString();
     String userId = "1";
 
-    when(permissionManager.canRead(eq(userId), eq(snippetId))).thenReturn(true);
+    when(permissionManager.canRead(eq(snippetId))).thenReturn(true);
     when(codeSnippetRepository.findById(snippetId)).thenReturn(Optional.empty());
 
     assertThrows(
@@ -198,7 +232,7 @@ class CodeSnippetServiceTest {
     String snippetId = UUID.randomUUID().toString();
     String userId = "1";
 
-    when(permissionManager.canRead(eq(userId), eq(snippetId))).thenReturn(false);
+    when(permissionManager.canRead(eq(snippetId))).thenReturn(false);
 
     assertThrows(
         PermissionDeniedDataAccessException.class,
@@ -210,43 +244,37 @@ class CodeSnippetServiceTest {
   @Test
   void updateSnippetSuccess() {
     String snippetId = UUID.randomUUID().toString();
-    String assetId = "snippet-test";
     String userId = "1";
 
     CodeSnippet existingSnippet = new CodeSnippet();
-    existingSnippet.setId(snippetId);
-    existingSnippet.setAssetId(assetId);
+    existingSnippet.setAssetId(snippetId);
     existingSnippet.setVersion("1.1");
     existingSnippet.setLanguage(CodeLanguage.PRINTSCRIPT);
 
-    when(codeSnippetRepository.findCodeSnippetByAssetId(assetId))
-        .thenReturn(Optional.of(existingSnippet));
+    when(codeSnippetRepository.findById(snippetId)).thenReturn(Optional.of(existingSnippet));
 
     SnippetReceivedDto snippetDto =
         SnippetReceivedDto.builder()
             .language("PRINTSCRIPT")
             .version("1.1")
             .content(mockMultipartFile("test content"))
-            .assetId(assetId)
             .build();
 
     when(codeSnippetRepository.save(any(CodeSnippet.class)))
         .thenAnswer(
             invocation -> {
               CodeSnippet snippet = invocation.getArgument(0);
-              snippet.setId(snippetId);
+              snippet.setAssetId(snippetId);
               return snippet;
             });
 
-    when(permissionManager.canWrite(eq(userId), eq(assetId))).thenReturn(true);
-    when(assetManager.createAsset(eq("snippets"), eq(assetId), any(MultipartFile.class)))
+    when(permissionManager.canWrite(eq(snippetId))).thenReturn(true);
+    when(assetManager.createAsset(eq("snippets"), eq(snippetId), any(MultipartFile.class)))
         .thenReturn(new ResponseEntity<>("Asset updated", HttpStatus.OK));
 
-    String response = codeSnippetService.updateSnippet(assetId, userId, snippetDto);
+    String response = codeSnippetService.updateSnippet(snippetId, userId, snippetDto);
 
     assertEquals("Snippet updated successfully", response);
-
-    verify(codeSnippetRepository).save(existingSnippet);
   }
 
   @Test
@@ -257,7 +285,6 @@ class CodeSnippetServiceTest {
     SnippetReceivedDto snippetDto =
         SnippetReceivedDto.builder().language("PRINTSCRIPT").version("1.1").build();
 
-    when(permissionManager.canWrite(eq(userId), eq(snippetId))).thenReturn(true);
     when(codeSnippetRepository.findById(snippetId)).thenReturn(Optional.empty());
 
     assertThrows(
@@ -272,7 +299,7 @@ class CodeSnippetServiceTest {
     String assetId = "snippet-test";
     String userId = "1";
 
-    when(permissionManager.canDelete(eq(userId), eq(assetId))).thenReturn(true);
+    when(permissionManager.canWrite(eq(assetId))).thenReturn(true);
     when(codeSnippetRepository.findCodeSnippetByAssetId(assetId))
         .thenReturn(Optional.of(new CodeSnippet()));
     when(assetManager.deleteAsset(eq("snippets"), eq(assetId)))
@@ -288,7 +315,7 @@ class CodeSnippetServiceTest {
     String snippetId = UUID.randomUUID().toString();
     String userId = "1";
 
-    when(permissionManager.canDelete(eq(userId), eq(snippetId))).thenReturn(false);
+    when(permissionManager.canDelete(eq(snippetId))).thenReturn(false);
 
     assertThrows(
         PermissionDeniedDataAccessException.class,

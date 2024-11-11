@@ -59,7 +59,11 @@ public class WebClientUtility {
             .retrieve()
             .bodyToFlux(DataBuffer.class);
 
+    System.out.println("DataBufferFlux: " + dataBufferFlux);
+
     byte[] byteArray = getBytes(dataBufferFlux);
+
+    System.out.println("ByteArray: " + byteArray);
 
     return new ByteArrayInputStream(byteArray);
   }

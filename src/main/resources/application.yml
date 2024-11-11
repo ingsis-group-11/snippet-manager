@@ -19,6 +19,10 @@ spring:
       resourceserver:
         jwt:
           issuer-uri: ${AUTH_SERVER_URI}
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:init.sql
 
 # Configurations for the services
 permission:
@@ -38,13 +42,14 @@ auth0:
 
 # Redis configuration
 redis:
-  host: localhost
-  port: 6379
-
-stream:
-  key:
-    lint: "lint"
-    formatter: "formatter"
+  host: ${REDIS_HOST:localhost}
+  port: ${REDIS_PORT:6379}
+  producer:
+    lint: "lint-queue"
+    formatter: "formatter-queue"
+  consumer:
+    lint: "lint-results"
+    group: "lint-group"
 
 # logging:
 #  level:

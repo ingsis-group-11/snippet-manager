@@ -28,6 +28,8 @@ services:
       POSTGRES_DB: snippet-manager-db
     volumes:
       - pgdata:/var/lib/postgresql/data
+      - ./src/main/resources/init.sql:/docker-entrypoint-initdb.d/init.sql
+    restart: always
 
   asset-service:
     container_name: asset-service-api

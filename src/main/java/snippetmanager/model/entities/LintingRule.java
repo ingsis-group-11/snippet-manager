@@ -17,6 +17,8 @@ public class LintingRule {
 
   private String name;
 
+  private Boolean isActive;
+
   private String value;
 
   private String userId;

@@ -9,7 +9,6 @@ import snippetmanager.util.PermissionType;
 @Getter
 @Setter
 public class PermissionDto {
-  private String userId;
   private String assetId;
   private PermissionType permission;
 }

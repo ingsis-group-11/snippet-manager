@@ -10,5 +10,8 @@ public class SnippetSendDto {
   private String language;
   private String version;
   private String content;
+  private String name;
   private String userId;
+  private String compliance;
+  private String extension;
 }

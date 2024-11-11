@@ -31,7 +31,16 @@ configurations {
 }
 
 repositories {
+	mavenLocal()
 	mavenCentral()
+	maven {
+		name = "GitHubPackages"
+		url = uri("https://maven.pkg.github.com/austral-ingsis/class-redis-streams")
+		credentials {
+			username = project.findProperty("gpr.user") ?: System.getenv("USERNAME")
+			password = project.findProperty("gpr.key") ?: System.getenv("TOKEN")
+		}
+	}
 }
 
 dependencies {
@@ -41,6 +50,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
 	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+	implementation 'org.austral.ingsis:redis-streams-mvc:0.1.13'
 
 	implementation 'org.mapstruct:mapstruct:1.5.2.Final'
 	annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.2.Final'

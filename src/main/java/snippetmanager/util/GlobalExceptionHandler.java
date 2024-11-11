@@ -35,10 +35,10 @@ public class GlobalExceptionHandler {
 
   // Handle PermissionDeniedDataAccessException globally
   @ExceptionHandler(PermissionDeniedDataAccessException.class)
-  @ResponseStatus(HttpStatus.UNAUTHORIZED)
+  @ResponseStatus(HttpStatus.FORBIDDEN)
   public ResponseEntity<String> handlePermissionDeniedDataAccessException(
       PermissionDeniedDataAccessException ex) {
-    return new ResponseEntity<>(ex.getMessage(), HttpStatus.UNAUTHORIZED);
+    return new ResponseEntity<>(ex.getMessage(), HttpStatus.FORBIDDEN);
   }
 
   // Handle other exceptions globally

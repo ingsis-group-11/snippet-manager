@@ -22,62 +22,67 @@ public class PermissionManager {
   @Value("${permission.manager.url}")
   private String permissionManagerUrl;
 
-  public boolean canRead(String userId, String snippetId) {
+  public boolean canRead(String snippetId) {
     PermissionDto body =
-        PermissionDto.builder()
-            .assetId(snippetId)
-            .userId(userId)
-            .permission(PermissionType.READ)
-            .build();
+        PermissionDto.builder().assetId(snippetId).permission(PermissionType.READ).build();
 
     return fetchPermissionData(body);
   }
 
-  public boolean canWrite(String userId, String snippetId) {
+  public boolean canWrite(String snippetId) {
     PermissionDto body =
-        PermissionDto.builder()
-            .assetId(snippetId)
-            .userId(userId)
-            .permission(PermissionType.READ_WRITE)
-            .build();
+        PermissionDto.builder().assetId(snippetId).permission(PermissionType.READ_WRITE).build();
 
     return fetchPermissionData(body);
   }
 
-  public ResponseEntity<List<String>> getSnippetsUserCanRead(String userId) {
-    String url = permissionManagerUrl + "/api/permission/" + "user/" + userId;
+  public ResponseEntity<List<String>> getSnippetsUserCanRead(
+      Integer from, Integer to, String permissionType) {
+    String url =
+        permissionManagerUrl
+            + "/api/permission"
+            + "?from="
+            + from
+            + "&to="
+            + to
+            + "&permissionType="
+            + permissionType;
     Mono<ResponseEntity<List<String>>> response =
         webClientUtility.getAsync(url, new ParameterizedTypeReference<List<String>>() {});
     return response.block(Duration.ofSeconds(timeOutInSeconds));
   }
 
-  public ResponseEntity<String> createNewPermission(String userId, String snippetId) {
-    PermissionDto permissionDto = PermissionDto.builder().assetId(snippetId).userId(userId).build();
-    String url = permissionManagerUrl + "/api/permission/";
+  public ResponseEntity<List<String>> getSnippetsUserCanWrite(String permissionType) {
+    String url = permissionManagerUrl + "/api/permission" + "?permissionType=" + permissionType;
+    Mono<ResponseEntity<List<String>>> response =
+        webClientUtility.getAsync(url, new ParameterizedTypeReference<List<String>>() {});
+    return response.block(Duration.ofSeconds(timeOutInSeconds));
+  }
+
+  public ResponseEntity<String> createNewPermission(String snippetId, PermissionType permission) {
+    PermissionDto permissionDto =
+        PermissionDto.builder().assetId(snippetId).permission(permission).build();
+    String url = permissionManagerUrl + "/api/permission";
     Mono<ResponseEntity<String>> response =
         webClientUtility.putAsync(url, permissionDto, String.class);
     return response.block(Duration.ofSeconds(timeOutInSeconds));
   }
 
-  public ResponseEntity<String> deletePermission(String userId, String snippetId) {
-    String url = permissionManagerUrl + "/api/permission/" + "user/" + userId + "/" + snippetId;
+  public ResponseEntity<String> deletePermission(String snippetId) {
+    String url = permissionManagerUrl + "/api/permission/" + snippetId;
     Mono<ResponseEntity<String>> response = webClientUtility.deleteAsync(url, String.class);
     return response.block(Duration.ofSeconds(timeOutInSeconds));
   }
 
-  public boolean canDelete(String userId, String snippetId) {
+  public boolean canDelete(String snippetId) {
     PermissionDto body =
-        PermissionDto.builder()
-            .assetId(snippetId)
-            .userId(userId)
-            .permission(PermissionType.DELETE)
-            .build();
+        PermissionDto.builder().assetId(snippetId).permission(PermissionType.DELETE).build();
 
     return fetchPermissionData(body);
   }
 
   private boolean fetchPermissionData(PermissionDto body) {
-    String url = permissionManagerUrl + "/api/permission/";
+    String url = permissionManagerUrl + "/api/permission";
     Mono<ResponseEntity<Boolean>> response = webClientUtility.postAsync(url, body, Boolean.class);
 
     ResponseEntity<Boolean> result = response.block(Duration.ofSeconds(timeOutInSeconds));
