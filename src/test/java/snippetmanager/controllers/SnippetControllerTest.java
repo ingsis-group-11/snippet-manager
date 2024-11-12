@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,6 +26,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.web.multipart.MultipartFile;
+import snippetmanager.model.dtos.AllSnippetsSendDto;
 import snippetmanager.model.dtos.SnippetReceivedDto;
 import snippetmanager.model.dtos.SnippetSendDto;
 import snippetmanager.services.CodeSnippetService;
@@ -90,16 +92,20 @@ public class SnippetControllerTest {
   @Test
   void getAllSnippets() {
     String userId = "1";
+
     List<SnippetSendDto> snippets =
         Arrays.asList(SnippetSendDto.builder().build(), SnippetSendDto.builder().build());
+    AllSnippetsSendDto expectedResponse =
+        AllSnippetsSendDto.builder().snippets(snippets).maxSnippets(2).build();
 
-    when(codeSnippetService.getAllSnippets(0, Integer.MAX_VALUE, userId)).thenReturn(snippets);
+    when(codeSnippetService.getAllSnippets(0, Integer.MAX_VALUE, userId))
+        .thenReturn(expectedResponse);
 
-    ResponseEntity<List<SnippetSendDto>> response =
+    ResponseEntity<AllSnippetsSendDto> response =
         codeSnippetController.getAllSnippets(0, Integer.MAX_VALUE);
 
     assertEquals(HttpStatus.OK, response.getStatusCode());
-    assertEquals(snippets, response.getBody());
+    assertEquals(snippets, Objects.requireNonNull(response.getBody()).getSnippets());
     verify(codeSnippetService).getAllSnippets(0, Integer.MAX_VALUE, userId);
   }
 
@@ -127,13 +133,13 @@ public class SnippetControllerTest {
     String userId = "1";
     String expectedResponse = "Snippet deleted successfully";
 
-    when(codeSnippetService.deleteSnippet(snippetId, userId)).thenReturn(expectedResponse);
+    when(codeSnippetService.deleteSnippet(snippetId)).thenReturn(expectedResponse);
 
     ResponseEntity<String> response = codeSnippetController.deleteSnippet(snippetId);
 
     assertEquals(HttpStatus.OK, response.getStatusCode());
     assertEquals(expectedResponse, response.getBody());
-    verify(codeSnippetService).deleteSnippet(snippetId, userId);
+    verify(codeSnippetService).deleteSnippet(snippetId);
   }
 
   private MultipartFile mockMultipartFile(String content) {

@@ -1,7 +1,6 @@
 package snippetmanager.webservice.permission;
 
 import java.time.Duration;
-import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
@@ -9,6 +8,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
+import snippetmanager.model.dtos.AllSnippetsRecieveDto;
+import snippetmanager.model.dtos.AllSnippetsSendDto;
 import snippetmanager.model.dtos.webservice.PermissionDto;
 import snippetmanager.util.enums.PermissionType;
 import snippetmanager.webservice.WebClientUtility;
@@ -36,26 +37,31 @@ public class PermissionManager {
     return fetchPermissionData(body);
   }
 
-  public ResponseEntity<List<String>> getSnippetsUserCanRead(
+  public ResponseEntity<AllSnippetsRecieveDto> getSnippetsUserWithPermission(
       Integer from, Integer to, String permissionType) {
-    String url =
-        permissionManagerUrl
-            + "/api/permission"
-            + "?from="
-            + from
-            + "&to="
-            + to
-            + "&permissionType="
-            + permissionType;
-    Mono<ResponseEntity<List<String>>> response =
-        webClientUtility.getAsync(url, new ParameterizedTypeReference<List<String>>() {});
+    String url;
+    if (from == null || to == null) {
+      url = permissionManagerUrl + "/api/permission" + "?permissionType=" + permissionType;
+    } else {
+      url =
+          permissionManagerUrl
+              + "/api/permission"
+              + "?from="
+              + from
+              + "&to="
+              + to
+              + "&permissionType="
+              + permissionType;
+    }
+    Mono<ResponseEntity<AllSnippetsRecieveDto>> response =
+        webClientUtility.getAsync(url, new ParameterizedTypeReference<>() {});
     return response.block(Duration.ofSeconds(timeOutInSeconds));
   }
 
-  public ResponseEntity<List<String>> getSnippetsUserCanWrite(String permissionType) {
+  public ResponseEntity<AllSnippetsSendDto> getSnippetsUserCanWrite(String permissionType) {
     String url = permissionManagerUrl + "/api/permission" + "?permissionType=" + permissionType;
-    Mono<ResponseEntity<List<String>>> response =
-        webClientUtility.getAsync(url, new ParameterizedTypeReference<List<String>>() {});
+    Mono<ResponseEntity<AllSnippetsSendDto>> response =
+        webClientUtility.getAsync(url, new ParameterizedTypeReference<>() {});
     return response.block(Duration.ofSeconds(timeOutInSeconds));
   }
 

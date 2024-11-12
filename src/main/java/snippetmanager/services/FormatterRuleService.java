@@ -16,7 +16,6 @@ import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.multipart.MultipartFile;
 import snippetmanager.model.dtos.RuleDto;
-import snippetmanager.model.dtos.SnippetSendDto;
 import snippetmanager.model.entities.FormatterRule;
 import snippetmanager.redis.formatter.FormatterProducer;
 import snippetmanager.repositories.FormatterRuleRepository;
@@ -84,18 +83,7 @@ public class FormatterRuleService {
   }
 
   private void publishAllSnippetsToRedis(String userId) {
-    codeSnippetService
-        .getAllWriteSnippets(userId)
-        .forEach(
-            snippet -> {
-              formatterProducer.publishEvent(
-                  SnippetSendDto.builder()
-                      .assetId(snippet.getAssetId())
-                      .language(snippet.getLanguage())
-                      .version(snippet.getVersion())
-                      .userId(snippet.getUserId())
-                      .build());
-            });
+    codeSnippetService.getAllOwnSnippets(userId).forEach(formatterProducer::publishEvent);
   }
 
   private void createAndSaveRule(String userId, RuleDto ruleDto) {

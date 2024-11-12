@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+import snippetmanager.model.dtos.AllSnippetsSendDto;
 import snippetmanager.model.dtos.LanguagesDto;
 import snippetmanager.model.dtos.SnippetReceivedDto;
 import snippetmanager.model.dtos.SnippetSendDto;
@@ -66,7 +67,7 @@ public class CodeSnippetController {
 
   // GET http://localhost:8080/api/snippet/
   @GetMapping
-  public ResponseEntity<List<SnippetSendDto>> getAllSnippets(
+  public ResponseEntity<AllSnippetsSendDto> getAllSnippets(
       @RequestParam(value = "from", required = false) Integer from,
       @RequestParam(value = "to", required = false) Integer to) {
     if (from == null) {
@@ -89,7 +90,7 @@ public class CodeSnippetController {
   // DELETE http://localhost:8080/api/snippet/{snippetId}
   @DeleteMapping("/{snippetId}")
   public ResponseEntity<String> deleteSnippet(@PathVariable String snippetId) {
-    return ResponseEntity.ok(codeSnippetService.deleteSnippet(snippetId, getUserId()));
+    return ResponseEntity.ok(codeSnippetService.deleteSnippet(snippetId));
   }
 
   @GetMapping("/languages")

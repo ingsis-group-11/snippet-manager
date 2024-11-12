@@ -17,7 +17,6 @@ import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.multipart.MultipartFile;
 import snippetmanager.model.dtos.RuleDto;
-import snippetmanager.model.dtos.SnippetSendDto;
 import snippetmanager.model.entities.CodeSnippet;
 import snippetmanager.model.entities.LintingRule;
 import snippetmanager.redis.linter.LintProducer;
@@ -117,18 +116,7 @@ public class LintingRuleService {
   }
 
   private void publishAllSnippetsToRedis(String userId) {
-    codeSnippetService
-        .getAllWriteSnippets(userId)
-        .forEach(
-            snippet -> {
-              lintProducer.publishEvent(
-                  SnippetSendDto.builder()
-                      .assetId(snippet.getAssetId())
-                      .language(snippet.getLanguage())
-                      .version(snippet.getVersion())
-                      .userId(snippet.getUserId())
-                      .build());
-            });
+    codeSnippetService.getAllOwnSnippets(userId).forEach(lintProducer::publishEvent);
   }
 
   private void createAndSaveRule(String userId, RuleDto ruleDto) {

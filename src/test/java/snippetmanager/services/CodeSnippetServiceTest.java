@@ -297,7 +297,6 @@ class CodeSnippetServiceTest extends AbstractTransactionalJUnit4SpringContextTes
   @Test
   void deleteSnippetSuccess() {
     String assetId = "snippet-test";
-    String userId = "1";
 
     when(permissionManager.canWrite(eq(assetId))).thenReturn(true);
     when(codeSnippetRepository.findCodeSnippetByAssetId(assetId))
@@ -305,7 +304,7 @@ class CodeSnippetServiceTest extends AbstractTransactionalJUnit4SpringContextTes
     when(assetManager.deleteAsset(eq("snippets"), eq(assetId)))
         .thenReturn(new ResponseEntity<>("Asset deleted", HttpStatus.OK));
 
-    String response = codeSnippetService.deleteSnippet(assetId, userId);
+    String response = codeSnippetService.deleteSnippet(assetId);
     assertEquals("Snippet deleted successfully", response);
     verify(codeSnippetRepository).deleteCodeSnippetByAssetId(assetId);
   }
@@ -313,14 +312,13 @@ class CodeSnippetServiceTest extends AbstractTransactionalJUnit4SpringContextTes
   @Test
   void deleteSnippetPermissionDenied() {
     String snippetId = UUID.randomUUID().toString();
-    String userId = "1";
 
     when(permissionManager.canDelete(eq(snippetId))).thenReturn(false);
 
     assertThrows(
         PermissionDeniedDataAccessException.class,
         () -> {
-          codeSnippetService.deleteSnippet(snippetId, userId);
+          codeSnippetService.deleteSnippet(snippetId);
         });
   }
 

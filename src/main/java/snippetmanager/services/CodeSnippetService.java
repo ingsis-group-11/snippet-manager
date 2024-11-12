@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.dao.PermissionDeniedDataAccessException;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +17,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.multipart.MultipartFile;
+import snippetmanager.model.dtos.AllSnippetsRecieveDto;
+import snippetmanager.model.dtos.AllSnippetsSendDto;
 import snippetmanager.model.dtos.LanguagesDto;
 import snippetmanager.model.dtos.SnippetReceivedDto;
 import snippetmanager.model.dtos.SnippetSendDto;
@@ -23,6 +26,7 @@ import snippetmanager.model.entities.CodeSnippet;
 import snippetmanager.model.entities.FormatterRule;
 import snippetmanager.model.entities.Languages;
 import snippetmanager.model.entities.LintingRule;
+import snippetmanager.redis.formatter.FormatterProducer;
 import snippetmanager.redis.linter.LintProducer;
 import snippetmanager.repositories.CodeSnippetRepository;
 import snippetmanager.repositories.FormatterRuleRepository;
@@ -36,6 +40,7 @@ import snippetmanager.webservice.printscript.PrintscriptManager;
 
 @Component
 public class CodeSnippetService {
+  private final FormatterProducer formatterProducer;
   private CodeSnippetRepository codeSnippetRepository;
 
   private PermissionManager permissionManager;
@@ -66,7 +71,8 @@ public class CodeSnippetService {
       FormatterRuleRepository formatterRuleRepository,
       @Lazy LintingRuleService lintingRuleService,
       @Lazy FormatterRuleService formatterRuleService,
-      LanguagesRepository languagesRepository) {
+      LanguagesRepository languagesRepository,
+      FormatterProducer formatterProducer) {
     this.lintProducer = lintProducer;
     this.codeSnippetRepository = codeSnippetRepository;
     this.permissionManager = permissionManager;
@@ -77,6 +83,7 @@ public class CodeSnippetService {
     this.lintingRuleService = lintingRuleService;
     this.formatterRuleService = formatterRuleService;
     this.languagesRepository = languagesRepository;
+    this.formatterProducer = formatterProducer;
   }
 
   private final String assetManagerContainer = "snippets";
@@ -134,46 +141,15 @@ public class CodeSnippetService {
     return snippetDto;
   }
 
-  public List<SnippetSendDto> getAllSnippets(Integer from, Integer to, String userId) {
-    List<CodeSnippet> codeSnippets = getAllCanReadSnippets(from, to);
-
-    List<SnippetSendDto> codeSnippetDtos =
-        codeSnippets.stream()
-            .map(
-                codeSnippet -> {
-                  InputStream assetResponse = getAsset(codeSnippet.getAssetId());
-                  MultipartFile asset = toMultipartFile(assetResponse, codeSnippet.getAssetId());
-                  String lintResult = codeSnippet.getResultAsString();
-
-                  SnippetSendDto snippetDto =
-                      convertToSnippetSendDto(codeSnippet, asset, lintResult, userId);
-                  snippetDto.setUserId(userId);
-                  return snippetDto;
-                })
-            .collect(Collectors.toList());
-
-    return codeSnippetDtos;
+  public AllSnippetsSendDto getAllSnippets(Integer from, Integer to, String userId) {
+    return getAllSnippetsWithPermission(from, to, userId, PermissionType.READ);
   }
 
-  public List<SnippetSendDto> getAllWriteSnippets(String userId) {
-    List<CodeSnippet> codeSnippets = getAllCanWriteSnippets();
+  public List<SnippetSendDto> getAllOwnSnippets(String userId) {
+    AllSnippetsSendDto allSnippetsSendDto =
+        getAllSnippetsWithPermission(null, null, userId, PermissionType.READ_WRITE);
 
-    List<SnippetSendDto> codeSnippetDtos =
-        codeSnippets.stream()
-            .map(
-                codeSnippet -> {
-                  InputStream assetResponse = getAsset(codeSnippet.getAssetId());
-                  MultipartFile asset = toMultipartFile(assetResponse, codeSnippet.getAssetId());
-                  String lintResult = codeSnippet.getResultAsString();
-
-                  SnippetSendDto snippetDto =
-                      convertToSnippetSendDto(codeSnippet, asset, lintResult, userId);
-                  snippetDto.setUserId(userId);
-                  return snippetDto;
-                })
-            .collect(Collectors.toList());
-
-    return codeSnippetDtos;
+    return allSnippetsSendDto.getSnippets();
   }
 
   @Transactional
@@ -183,7 +159,7 @@ public class CodeSnippetService {
       throw new EntityNotFoundException("Snippet not found with assetId " + assetId);
     }
 
-    boolean canAccess = canWriteSnippet(userId, assetId);
+    boolean canAccess = canWriteSnippet(assetId);
     if (!canAccess) {
       throw new PermissionDeniedDataAccessException(
           "You don't have permission to write this snippet",
@@ -201,8 +177,8 @@ public class CodeSnippetService {
   }
 
   @Transactional
-  public String deleteSnippet(String assetId, String userId) {
-    boolean canAccess = canWriteSnippet(userId, assetId);
+  public String deleteSnippet(String assetId) {
+    boolean canAccess = canWriteSnippet(assetId);
     if (!canAccess) {
       throw new PermissionDeniedDataAccessException(
           "You don't have permission to access this snippet",
@@ -250,26 +226,43 @@ public class CodeSnippetService {
         .build();
   }
 
-  private List<CodeSnippet> getAllCanReadSnippets(Integer from, Integer to) {
+  @NotNull
+  private List<SnippetSendDto> getSnippetSendDtos(String userId, List<CodeSnippet> codeSnippets) {
+    return codeSnippets.stream()
+        .map(
+            codeSnippet -> {
+              InputStream assetResponse = getAsset(codeSnippet.getAssetId());
+              MultipartFile asset = toMultipartFile(assetResponse, codeSnippet.getAssetId());
+              String lintResult = codeSnippet.getResultAsString();
 
-    return Objects.requireNonNull(
-            permissionManager
-                .getSnippetsUserCanRead(from, to, PermissionType.READ.toString())
-                .getBody())
-        .stream()
-        .map(this::findSnippetByAssetId)
+              SnippetSendDto snippetDto =
+                  convertToSnippetSendDto(codeSnippet, asset, lintResult, userId);
+              snippetDto.setUserId(userId);
+              return snippetDto;
+            })
         .collect(Collectors.toList());
   }
 
-  private List<CodeSnippet> getAllCanWriteSnippets() {
+  private AllSnippetsSendDto getAllSnippetsWithPermission(
+      Integer from, Integer to, String userId, PermissionType permissionType) {
+    AllSnippetsRecieveDto allSnippetsRecieveDto =
+        permissionManager
+            .getSnippetsUserWithPermission(from, to, permissionType.toString())
+            .getBody();
 
-    return Objects.requireNonNull(
-            permissionManager
-                .getSnippetsUserCanWrite(PermissionType.READ_WRITE.toString())
-                .getBody())
-        .stream()
-        .map(this::findSnippetByAssetId)
-        .collect(Collectors.toList());
+    assert allSnippetsRecieveDto != null;
+    List<CodeSnippet> codeSnippets =
+        Objects.requireNonNull(
+            Objects.requireNonNull(allSnippetsRecieveDto.getSnippetsIds()).stream()
+                .map(this::findSnippetByAssetId)
+                .collect(Collectors.toList()));
+
+    List<SnippetSendDto> codeSnippetDtos = getSnippetSendDtos(userId, codeSnippets);
+
+    return AllSnippetsSendDto.builder()
+        .snippets(codeSnippetDtos)
+        .maxSnippets(allSnippetsRecieveDto.getMaxSnippets())
+        .build();
   }
 
   private String getContentFromMultipartFile(MultipartFile content) {
@@ -331,12 +324,8 @@ public class CodeSnippetService {
     return permissionManager.canRead(snippetId);
   }
 
-  private boolean canWriteSnippet(String userId, String snippetId) {
+  private boolean canWriteSnippet(String snippetId) {
     return permissionManager.canWrite(snippetId);
-  }
-
-  private boolean canDeleteSnippet(String userId, String snippetId) {
-    return permissionManager.canDelete(snippetId);
   }
 
   private ResponseEntity<String> deletePermission(String snippetId) {
@@ -361,6 +350,7 @@ public class CodeSnippetService {
   private void publishToRedis(MultipartFile content, CodeSnippet codeSnippet, String userId) {
     String result = codeSnippet.getResultAsString();
     lintProducer.publishEvent(convertToSnippetSendDto(codeSnippet, content, result, userId));
+    formatterProducer.publishEvent(convertToSnippetSendDto(codeSnippet, content, result, userId));
   }
 
   public List<LanguagesDto> getLanguages() {
