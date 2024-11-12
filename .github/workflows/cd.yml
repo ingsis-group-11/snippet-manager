@@ -33,11 +33,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
 
-      # Paso 4: Construir el proyecto con Gradle
-      - name: Build Gradle
-        run: gradle assemble --no-daemon
-
-      # Paso 5: Iniciar sesión en GitHub Container Registry
+      # Paso 4: Iniciar sesión en GitHub Container Registry
       - name: Login GHCR
         uses: docker/login-action@v2
         with:
@@ -45,7 +41,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.DOCKER_TOKEN }}
 
-      # Paso 6: Establecer la etiqueta de la imagen según la rama
+      # Paso 5: Establecer el tag de la imagen según la rama
       - name: Set Docker Image Tag
         id: get-tag
         run: |
@@ -57,12 +53,13 @@ jobs:
             echo "TAG=other" >> $GITHUB_ENV
           fi
 
-      # Paso 7: Construir la imagen Docker con la etiqueta correspondiente
-      - name: Build Docker Image
-        run: |
-          docker build -t ghcr.io/${{ github.repository }}:${{ env.TAG }} .
-
-      # Paso 8: Push de la imagen Docker a GHCR
-      - name: Push Docker Image
-        run: |
-          docker push ghcr.io/${{ github.repository }}:${{ env.TAG }}
+      # Paso 6: Construir la imagen Docker con los secretos
+      - name: Build And Push Docker Image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ghcr.io/${{ github.repository }}:${{ env.TAG }}
+          secrets: |
+            gpr_user=${{github.actor}}
+            gpr_token=${{secrets.DOCKER_TOKEN}}

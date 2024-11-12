@@ -1,3 +1,4 @@
+# Spring Boot application configuration
 spring:
   application:
     name: back
@@ -9,16 +10,25 @@ spring:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:snippet-manager-db}}
     username: ${SPRING_DATASOURCE_USERNAME:${DB_USER:admin}}
     password: ${SPRING_DATASOURCE_PASSWORD:${DB_PASSWORD:admin}}
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
   jpa:
     hibernate:
-      ddl-auto: create
+      ddl-auto: update
     database-platform: org.hibernate.dialect.PostgreSQLDialect
   security:
     oauth2:
       resourceserver:
         jwt:
           issuer-uri: ${AUTH_SERVER_URI}
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:init.sql
 
+# Configurations for the services
 permission:
   manager:
     url: ${PERMISSION_MANAGER_URL:http://localhost:8003}
@@ -34,10 +44,23 @@ asset:
 auth0:
   audience: ${AUTH0_AUDIENCE}
 
+# Redis configuration
+redis:
+  producer:
+    lint: "lint-queue"
+    formatter: "formatter-queue"
+  consumer:
+    lint: "lint-results"
+    group: "lint-group"
+
+# logging:
+#  level:
+#    org.springframework.web: DEBUG
+#    org.springframework.security: DEBUG
+
 server:
   port: ${DOCKER_PORT:8000}
 
 logging:
   level:
-    org.springframework.web: DEBUG
-    org.springframework.security: DEBUG
+    org.springframework.web.filter.CommonsRequestLoggingFilter: DEBUG
