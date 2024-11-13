@@ -67,7 +67,7 @@ jobs:
   deploy_to_vm:
     name: Deploy Service
     needs: build-and-push
-    uses: ingsis-group-11/infra/.github/workflows/update-vm.yml
+    uses: ingsis-group-11/infra/.github/workflows/update-vm.yml@main
     with:
       environment: ${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
     secrets:
