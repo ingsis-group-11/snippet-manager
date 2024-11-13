@@ -1,11 +1,10 @@
 package snippetmanager.model.dtos;
 
 import jakarta.persistence.ElementCollection;
+import java.util.List;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
-
-import java.util.List;
 
 @Builder
 @Setter
@@ -16,10 +15,7 @@ public class TestCaseDto {
 
   private String name;
 
-  @ElementCollection
-  private List<String> input;
+  @ElementCollection private List<String> input;
 
-  @ElementCollection
-  private List<String> output;
-
+  @ElementCollection private List<String> output;
 }

@@ -18,11 +18,24 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.multipart.MultipartFile;
-import snippetmanager.model.dtos.*;
-import snippetmanager.model.entities.*;
+import snippetmanager.model.dtos.AllSnippetsRecieveDto;
+import snippetmanager.model.dtos.AllSnippetsSendDto;
+import snippetmanager.model.dtos.LanguagesDto;
+import snippetmanager.model.dtos.SnippetReceivedDto;
+import snippetmanager.model.dtos.SnippetSendDto;
+import snippetmanager.model.dtos.TestCaseDto;
+import snippetmanager.model.entities.CodeSnippet;
+import snippetmanager.model.entities.FormatterRule;
+import snippetmanager.model.entities.Languages;
+import snippetmanager.model.entities.LintingRule;
+import snippetmanager.model.entities.TestCase;
 import snippetmanager.redis.formatter.FormatterProducer;
 import snippetmanager.redis.linter.LintProducer;
-import snippetmanager.repositories.*;
+import snippetmanager.repositories.CodeSnippetRepository;
+import snippetmanager.repositories.FormatterRuleRepository;
+import snippetmanager.repositories.LanguagesRepository;
+import snippetmanager.repositories.LintingRuleRepository;
+import snippetmanager.repositories.TestCaseRepository;
 import snippetmanager.util.DefaultRulesFactory;
 import snippetmanager.util.enums.PermissionType;
 import snippetmanager.webservice.asset.AssetManager;
@@ -54,8 +67,7 @@ public class CodeSnippetService {
 
   private UserService userService;
 
-  @Autowired
-  private TestCaseRepository testCaseRepository;
+  @Autowired private TestCaseRepository testCaseRepository;
 
   public CodeSnippetService(
       CodeSnippetRepository codeSnippetRepository,
@@ -377,7 +389,8 @@ public class CodeSnippetService {
           new Exception("You don't have permission to access this snippet"));
     }
 
-    List<TestCaseDto> testCasesDto = convertToTestCaseDto(testCaseRepository.findByAssetId(assetId));
+    List<TestCaseDto> testCasesDto =
+        convertToTestCaseDto(testCaseRepository.findByAssetId(assetId));
 
     return testCasesDto;
   }
@@ -398,8 +411,7 @@ public class CodeSnippetService {
       testCase.setName(testCaseDto.getName());
       testCase.setInputs(testCaseDto.getInput());
       testCase.setOutputs(testCaseDto.getOutput());
-    }
-    else {
+    } else {
       Optional<TestCase> optionalTestCase = testCaseRepository.findById(testCaseDto.getTestId());
       if (optionalTestCase.isEmpty()) {
         throw new EntityNotFoundException("Test case not found with id " + testCaseDto.getTestId());
@@ -420,7 +432,7 @@ public class CodeSnippetService {
   }
 
   @Transactional
-  public String deleteTestCases( String testId) {
+  public String deleteTestCases(String testId) {
 
     try {
       testCaseRepository.deleteById(testId);
@@ -430,7 +442,6 @@ public class CodeSnippetService {
     }
 
     return "Test cases deleted successfully";
-
   }
 
   public String test(String assetId, TestCaseDto testCaseDto) {
@@ -438,8 +449,8 @@ public class CodeSnippetService {
     boolean canAccess = canWriteSnippet(assetId);
     if (!canAccess) {
       throw new PermissionDeniedDataAccessException(
-              "You don't have permission to write this snippet",
-              new Exception("You don't have permission to write this snippet"));
+          "You don't have permission to write this snippet",
+          new Exception("You don't have permission to write this snippet"));
     }
 
     InputStream assetResponse = getAsset(assetId);
@@ -450,14 +461,14 @@ public class CodeSnippetService {
     List<String> input = testCaseDto.getInput();
     List<String> output = testCaseDto.getOutput();
 
-    ResponseEntity<String> testResponse = printscriptManager.test(assetResponse, language, version, input, output);
+    ResponseEntity<String> testResponse =
+        printscriptManager.test(assetResponse, language, version, input, output);
 
     if (testResponse.getStatusCode().isError()) {
       throw new HttpServerErrorException(testResponse.getStatusCode());
     }
 
     return testResponse.getBody();
-
   }
 
   private List<TestCaseDto> convertToTestCaseDto(List<TestCase> testCases) {

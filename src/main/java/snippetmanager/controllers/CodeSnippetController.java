@@ -6,14 +6,21 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-import snippetmanager.model.dtos.SnippetReceivedDto;
-import snippetmanager.model.dtos.SnippetSendDto;
 import snippetmanager.model.dtos.AllSnippetsSendDto;
 import snippetmanager.model.dtos.LanguagesDto;
+import snippetmanager.model.dtos.SnippetReceivedDto;
+import snippetmanager.model.dtos.SnippetSendDto;
 import snippetmanager.model.dtos.TestCaseDto;
-import snippetmanager.model.entities.TestCase;
 import snippetmanager.services.CodeSnippetService;
 
 @RestController
@@ -112,7 +119,7 @@ public class CodeSnippetController {
 
   @PostMapping("testCases/test/{assetId}")
   public ResponseEntity<String> testSnippet(
-          @PathVariable String assetId, @RequestBody TestCaseDto testCase) {
+      @PathVariable String assetId, @RequestBody TestCaseDto testCase) {
     return ResponseEntity.ok(codeSnippetService.test(assetId, testCase));
   }
 }

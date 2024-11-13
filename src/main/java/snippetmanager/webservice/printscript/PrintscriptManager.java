@@ -8,7 +8,6 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
 import java.util.stream.Collectors;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
@@ -42,7 +41,12 @@ public class PrintscriptManager {
     return response.block(Duration.ofSeconds(timeOutInSeconds));
   }
 
-  public ResponseEntity<String> test(InputStream content, String language, String version, List<String> inputs, List<String> outputs) {
+  public ResponseEntity<String> test(
+      InputStream content,
+      String language,
+      String version,
+      List<String> inputs,
+      List<String> outputs) {
     String resource = convertInputStreamToString(content);
     MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
     body.add("content", resource);
@@ -56,7 +60,8 @@ public class PrintscriptManager {
   }
 
   private String convertInputStreamToString(InputStream inputStream) {
-    try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
+    try (BufferedReader reader =
+        new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
       return reader.lines().collect(Collectors.joining("\n"));
     } catch (IOException e) {
       throw new RuntimeException("Error reading InputStream", e);
