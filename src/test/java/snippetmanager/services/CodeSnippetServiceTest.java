@@ -272,6 +272,9 @@ class CodeSnippetServiceTest extends AbstractTransactionalJUnit4SpringContextTes
     when(assetManager.createAsset(eq("snippets"), eq(snippetId), any(MultipartFile.class)))
         .thenReturn(new ResponseEntity<>("Asset updated", HttpStatus.OK));
 
+    when(printscriptManager.compile(anyString(), any(CodeLanguage.class), anyString()))
+        .thenReturn(new ResponseEntity<>("Snippet compiled successfully", HttpStatus.OK));
+
     String response = codeSnippetService.updateSnippet(snippetId, userId, snippetDto);
 
     assertEquals("Snippet updated successfully", response);

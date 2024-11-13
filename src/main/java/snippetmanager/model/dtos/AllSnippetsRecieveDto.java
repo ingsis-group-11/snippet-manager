@@ -11,6 +11,6 @@ import lombok.Setter;
 @Getter
 @Setter
 public class AllSnippetsRecieveDto {
-  private List<String> snippetsIds;
+  private List<SnippetIdAuthorDto> snippetsIds;
   private int maxSnippets;
 }
