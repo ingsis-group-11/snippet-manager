@@ -69,7 +69,10 @@ public class Auth2ResourceServerSecurityConfiguration {
   public CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration configuration = new CorsConfiguration();
     configuration.setAllowedOrigins(
-        List.of("http://localhost:5173", "https://printscript-dev.brazilsouth.cloudapp.azure.com"));
+        List.of(
+            "http://localhost:5173",
+            "https://printscript-dev.brazilsouth.cloudapp.azure.com",
+            "https://printscript-prod.brazilsouth.cloudapp.azure.com"));
     configuration.setAllowedMethods(List.of("GET", "PUT", "POST", "DELETE", "OPTIONS"));
     configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
     configuration.setAllowCredentials(true);
