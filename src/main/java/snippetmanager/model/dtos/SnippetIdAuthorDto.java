@@ -10,6 +10,6 @@ import lombok.Setter;
 @Getter
 @Builder
 public class SnippetIdAuthorDto {
-    private String snippetId;
-    private String author;
+  private String snippetId;
+  private String author;
 }

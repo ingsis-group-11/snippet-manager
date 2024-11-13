@@ -239,8 +239,7 @@ public class CodeSnippetService {
     MultipartFile asset = toMultipartFile(assetResponse, codeSnippet.getAssetId());
     String lintResult = codeSnippet.getResultAsString();
 
-    SnippetSendDto snippetDto =
-            convertToSnippetSendDto(codeSnippet, asset, lintResult, userId);
+    SnippetSendDto snippetDto = convertToSnippetSendDto(codeSnippet, asset, lintResult, userId);
     snippetDto.setUserId(userId);
     return snippetDto;
   }
@@ -256,12 +255,13 @@ public class CodeSnippetService {
     List<SnippetSendDto> snippetSendDtos =
         Objects.requireNonNull(
             Objects.requireNonNull(allSnippetsRecieveDto.getSnippetsIds()).stream()
-                .map(snippetReceived -> {
-                  CodeSnippet snippet = findSnippetByAssetId(snippetReceived.getSnippetId());
-                  SnippetSendDto snippetSendDto = getSnippetSendDto(userId, snippet);
-                  snippetSendDto.setAuthor(getUserName(snippetReceived.getAuthor()));
-                  return snippetSendDto;
-                })
+                .map(
+                    snippetReceived -> {
+                      CodeSnippet snippet = findSnippetByAssetId(snippetReceived.getSnippetId());
+                      SnippetSendDto snippetSendDto = getSnippetSendDto(userId, snippet);
+                      snippetSendDto.setAuthor(getUserName(snippetReceived.getAuthor()));
+                      return snippetSendDto;
+                    })
                 .collect(Collectors.toList()));
 
     return AllSnippetsSendDto.builder()
