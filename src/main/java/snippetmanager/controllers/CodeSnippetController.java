@@ -9,7 +9,9 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -18,6 +20,7 @@ import snippetmanager.model.dtos.AllSnippetsSendDto;
 import snippetmanager.model.dtos.LanguagesDto;
 import snippetmanager.model.dtos.SnippetReceivedDto;
 import snippetmanager.model.dtos.SnippetSendDto;
+import snippetmanager.model.dtos.TestCaseDto;
 import snippetmanager.services.CodeSnippetService;
 
 @RestController
@@ -96,5 +99,27 @@ public class CodeSnippetController {
   @GetMapping("/languages")
   public ResponseEntity<List<LanguagesDto>> getLanguages() {
     return ResponseEntity.ok(codeSnippetService.getLanguages());
+  }
+
+  @GetMapping("testCases/{assetId}")
+  public ResponseEntity<List<TestCaseDto>> getTestCases(@PathVariable String assetId) {
+    return ResponseEntity.ok(codeSnippetService.getTestCases(assetId));
+  }
+
+  @PostMapping("testCases/{assetId}")
+  public ResponseEntity<TestCaseDto> postTestCases(
+      @PathVariable String assetId, @RequestBody TestCaseDto testCases) {
+    return ResponseEntity.ok(codeSnippetService.postTestCase(assetId, testCases));
+  }
+
+  @DeleteMapping("testCases/{testId}")
+  public ResponseEntity<String> deleteTestCase(@PathVariable String testId) {
+    return ResponseEntity.ok(codeSnippetService.deleteTestCases(testId));
+  }
+
+  @PostMapping("testCases/test/{assetId}")
+  public ResponseEntity<String> testSnippet(
+      @PathVariable String assetId, @RequestBody TestCaseDto testCase) {
+    return ResponseEntity.ok(codeSnippetService.test(assetId, testCase));
   }
 }

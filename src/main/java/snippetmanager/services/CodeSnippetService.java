@@ -8,6 +8,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.dao.PermissionDeniedDataAccessException;
 import org.springframework.http.ResponseEntity;
@@ -22,16 +23,19 @@ import snippetmanager.model.dtos.AllSnippetsSendDto;
 import snippetmanager.model.dtos.LanguagesDto;
 import snippetmanager.model.dtos.SnippetReceivedDto;
 import snippetmanager.model.dtos.SnippetSendDto;
+import snippetmanager.model.dtos.TestCaseDto;
 import snippetmanager.model.entities.CodeSnippet;
 import snippetmanager.model.entities.FormatterRule;
 import snippetmanager.model.entities.Languages;
 import snippetmanager.model.entities.LintingRule;
+import snippetmanager.model.entities.TestCase;
 import snippetmanager.redis.formatter.FormatterProducer;
 import snippetmanager.redis.linter.LintProducer;
 import snippetmanager.repositories.CodeSnippetRepository;
 import snippetmanager.repositories.FormatterRuleRepository;
 import snippetmanager.repositories.LanguagesRepository;
 import snippetmanager.repositories.LintingRuleRepository;
+import snippetmanager.repositories.TestCaseRepository;
 import snippetmanager.util.DefaultRulesFactory;
 import snippetmanager.util.enums.PermissionType;
 import snippetmanager.webservice.asset.AssetManager;
@@ -62,6 +66,8 @@ public class CodeSnippetService {
   private LanguagesRepository languagesRepository;
 
   private UserService userService;
+
+  @Autowired private TestCaseRepository testCaseRepository;
 
   public CodeSnippetService(
       CodeSnippetRepository codeSnippetRepository,
@@ -370,6 +376,110 @@ public class CodeSnippetService {
                 LanguagesDto.builder()
                     .language(language.getLanguage())
                     .extension(language.getExtension())
+                    .build())
+        .collect(Collectors.toList());
+  }
+
+  public List<TestCaseDto> getTestCases(String assetId) {
+
+    boolean canAccess = canWriteSnippet(assetId);
+    if (!canAccess) {
+      throw new PermissionDeniedDataAccessException(
+          "You don't have permission to access this snippet",
+          new Exception("You don't have permission to access this snippet"));
+    }
+
+    List<TestCaseDto> testCasesDto =
+        convertToTestCaseDto(testCaseRepository.findByAssetId(assetId));
+
+    return testCasesDto;
+  }
+
+  @Transactional
+  public TestCaseDto postTestCase(String assetId, TestCaseDto testCaseDto) {
+
+    boolean canAccess = canWriteSnippet(assetId);
+    if (!canAccess) {
+      throw new PermissionDeniedDataAccessException(
+          "You don't have permission to write this snippet",
+          new Exception("You don't have permission to write this snippet"));
+    }
+    TestCase testCase;
+    if (Objects.equals(testCaseDto.getTestId(), "default-id")) {
+      testCase = new TestCase();
+      testCase.setAssetId(assetId);
+      testCase.setName(testCaseDto.getName());
+      testCase.setInputs(testCaseDto.getInput());
+      testCase.setOutputs(testCaseDto.getOutput());
+    } else {
+      Optional<TestCase> optionalTestCase = testCaseRepository.findById(testCaseDto.getTestId());
+      if (optionalTestCase.isEmpty()) {
+        throw new EntityNotFoundException("Test case not found with id " + testCaseDto.getTestId());
+      }
+      testCase = optionalTestCase.get();
+      testCase.setName(testCaseDto.getName());
+      testCase.setInputs(testCaseDto.getInput());
+      testCase.setOutputs(testCaseDto.getOutput());
+    }
+
+    try {
+      testCaseRepository.save(testCase);
+    } catch (Exception e) {
+      TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+      throw new RuntimeException("Error saving the test case", e);
+    }
+    return testCaseDto;
+  }
+
+  @Transactional
+  public String deleteTestCases(String testId) {
+
+    try {
+      testCaseRepository.deleteById(testId);
+    } catch (Exception e) {
+      TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+      throw new RuntimeException("Error deleting the test cases", e);
+    }
+
+    return "Test cases deleted successfully";
+  }
+
+  public String test(String assetId, TestCaseDto testCaseDto) {
+
+    boolean canAccess = canWriteSnippet(assetId);
+    if (!canAccess) {
+      throw new PermissionDeniedDataAccessException(
+          "You don't have permission to write this snippet",
+          new Exception("You don't have permission to write this snippet"));
+    }
+
+    InputStream assetResponse = getAsset(assetId);
+
+    CodeSnippet codeSnippet = findSnippetByAssetId(assetId);
+    String language = codeSnippet.getLanguage().name();
+    String version = codeSnippet.getVersion();
+    List<String> input = testCaseDto.getInput();
+    List<String> output = testCaseDto.getOutput();
+
+    ResponseEntity<String> testResponse =
+        printscriptManager.test(assetResponse, language, version, input, output);
+
+    if (testResponse.getStatusCode().isError()) {
+      throw new HttpServerErrorException(testResponse.getStatusCode());
+    }
+
+    return testResponse.getBody();
+  }
+
+  private List<TestCaseDto> convertToTestCaseDto(List<TestCase> testCases) {
+    return testCases.stream()
+        .map(
+            testCase ->
+                TestCaseDto.builder()
+                    .testId(testCase.getId())
+                    .name(testCase.getName())
+                    .input(testCase.getInputs())
+                    .output(testCase.getOutputs())
                     .build())
         .collect(Collectors.toList());
   }
