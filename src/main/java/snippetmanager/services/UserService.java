@@ -4,6 +4,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import snippetmanager.model.dtos.UserDto;
 import snippetmanager.model.entities.User;
@@ -18,14 +21,26 @@ public class UserService {
     this.userRepository = userRepository;
   }
 
-  public void createUser(String userId, String name) {
+  private String getUserEmail() {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    Jwt jwt = (Jwt) authentication.getPrincipal();
+
+    return jwt.getClaimAsString("username");
+  }
+
+  public void createUser(String userId) {
     boolean userExists = checkIfUserExists(userId);
     if (!userExists) {
       User user = new User();
       user.setUserId(userId);
-      user.setName(name);
+      user.setName(getUserEmail());
       userRepository.save(user);
     }
+  }
+
+  public String getUserName(String userId) {
+    Optional<User> userOptional = userRepository.findById(userId);
+    return userOptional.map(User::getName).orElse(null);
   }
 
   private boolean checkIfUserExists(String userId) {
@@ -34,11 +49,10 @@ public class UserService {
   }
 
   public List<UserDto> getUsers(String currentUserId) {
-    // Get all users except the current user
     List<User> users = userRepository.findAll();
     return users.stream()
         .filter(user -> !Objects.equals(user.getUserId(), currentUserId))
-        .map(user -> UserDto.builder().userId(user.getUserId()).name(user.getName()).build())
+        .map(user -> UserDto.builder().id(user.getUserId()).name(user.getName()).build())
         .toList();
   }
 }

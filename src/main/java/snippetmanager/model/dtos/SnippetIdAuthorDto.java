@@ -1,13 +1,15 @@
 package snippetmanager.model.dtos;
 
 import lombok.Builder;
+import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
-@Getter
+@Data
 @Setter
+@Getter
 @Builder
-public class UserDto {
-  private String id;
-  private String name;
+public class SnippetIdAuthorDto {
+  private String snippetId;
+  private String author;
 }

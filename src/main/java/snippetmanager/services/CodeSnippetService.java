@@ -61,6 +61,8 @@ public class CodeSnippetService {
 
   private LanguagesRepository languagesRepository;
 
+  private UserService userService;
+
   public CodeSnippetService(
       CodeSnippetRepository codeSnippetRepository,
       LintProducer lintProducer,
@@ -72,7 +74,8 @@ public class CodeSnippetService {
       @Lazy LintingRuleService lintingRuleService,
       @Lazy FormatterRuleService formatterRuleService,
       LanguagesRepository languagesRepository,
-      FormatterProducer formatterProducer) {
+      FormatterProducer formatterProducer,
+      UserService userService) {
     this.lintProducer = lintProducer;
     this.codeSnippetRepository = codeSnippetRepository;
     this.permissionManager = permissionManager;
@@ -84,6 +87,7 @@ public class CodeSnippetService {
     this.formatterRuleService = formatterRuleService;
     this.languagesRepository = languagesRepository;
     this.formatterProducer = formatterProducer;
+    this.userService = userService;
   }
 
   private final String assetManagerContainer = "snippets";
@@ -142,6 +146,7 @@ public class CodeSnippetService {
   }
 
   public AllSnippetsSendDto getAllSnippets(Integer from, Integer to, String userId) {
+    userService.createUser(userId);
     return getAllSnippetsWithPermission(from, to, userId, PermissionType.READ);
   }
 
@@ -158,7 +163,9 @@ public class CodeSnippetService {
     if (snippet.isEmpty()) {
       throw new EntityNotFoundException("Snippet not found with assetId " + assetId);
     }
-
+    codeSnippet.setLanguage(snippet.get().getLanguage().name());
+    codeSnippet.setVersion(snippet.get().getVersion());
+    compileSnippet(codeSnippet);
     boolean canAccess = canWriteSnippet(assetId);
     if (!canAccess) {
       throw new PermissionDeniedDataAccessException(
@@ -227,20 +234,14 @@ public class CodeSnippetService {
   }
 
   @NotNull
-  private List<SnippetSendDto> getSnippetSendDtos(String userId, List<CodeSnippet> codeSnippets) {
-    return codeSnippets.stream()
-        .map(
-            codeSnippet -> {
-              InputStream assetResponse = getAsset(codeSnippet.getAssetId());
-              MultipartFile asset = toMultipartFile(assetResponse, codeSnippet.getAssetId());
-              String lintResult = codeSnippet.getResultAsString();
+  private SnippetSendDto getSnippetSendDto(String userId, CodeSnippet codeSnippet) {
+    InputStream assetResponse = getAsset(codeSnippet.getAssetId());
+    MultipartFile asset = toMultipartFile(assetResponse, codeSnippet.getAssetId());
+    String lintResult = codeSnippet.getResultAsString();
 
-              SnippetSendDto snippetDto =
-                  convertToSnippetSendDto(codeSnippet, asset, lintResult, userId);
-              snippetDto.setUserId(userId);
-              return snippetDto;
-            })
-        .collect(Collectors.toList());
+    SnippetSendDto snippetDto = convertToSnippetSendDto(codeSnippet, asset, lintResult, userId);
+    snippetDto.setUserId(userId);
+    return snippetDto;
   }
 
   private AllSnippetsSendDto getAllSnippetsWithPermission(
@@ -251,18 +252,26 @@ public class CodeSnippetService {
             .getBody();
 
     assert allSnippetsRecieveDto != null;
-    List<CodeSnippet> codeSnippets =
+    List<SnippetSendDto> snippetSendDtos =
         Objects.requireNonNull(
             Objects.requireNonNull(allSnippetsRecieveDto.getSnippetsIds()).stream()
-                .map(this::findSnippetByAssetId)
+                .map(
+                    snippetReceived -> {
+                      CodeSnippet snippet = findSnippetByAssetId(snippetReceived.getSnippetId());
+                      SnippetSendDto snippetSendDto = getSnippetSendDto(userId, snippet);
+                      snippetSendDto.setAuthor(getUserName(snippetReceived.getAuthor()));
+                      return snippetSendDto;
+                    })
                 .collect(Collectors.toList()));
 
-    List<SnippetSendDto> codeSnippetDtos = getSnippetSendDtos(userId, codeSnippets);
-
     return AllSnippetsSendDto.builder()
-        .snippets(codeSnippetDtos)
+        .snippets(snippetSendDtos)
         .maxSnippets(allSnippetsRecieveDto.getMaxSnippets())
         .build();
+  }
+
+  private String getUserName(String userId) {
+    return userService.getUserName(userId);
   }
 
   private String getContentFromMultipartFile(MultipartFile content) {
