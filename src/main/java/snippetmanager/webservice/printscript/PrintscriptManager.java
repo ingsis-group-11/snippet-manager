@@ -45,7 +45,7 @@ public class PrintscriptManager {
 
       String errorMessage = ex.getResponseBodyAsString();
       throw new RuntimeException(
-          "Compilation failed: " + (errorMessage.isEmpty() ? ex.getStatusText() : errorMessage),
+           (errorMessage.isEmpty() ? ex.getStatusText() : errorMessage),
           ex);
     } catch (WebClientResponseException ex) {
 
