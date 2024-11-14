@@ -73,8 +73,19 @@ public class PrintscriptManager {
     body.add("content", resource);
     body.add("language", language);
     body.add("version", version);
-    body.add("inputs", inputs);
-    body.add("outputs", outputs);
+
+    if (inputs.isEmpty()) {
+      body.add("input", new String[0]);
+    } else {
+      inputs.forEach(input -> body.add("input", input));
+    }
+
+    if (outputs.isEmpty()) {
+      body.add("output", new String[0]);
+    } else {
+      outputs.forEach(output -> body.add("output", output));
+    }
+
     String url = printscriptServiceUrl + "/api/test";
     Mono<ResponseEntity<String>> response = webClientUtility.postAsync(url, body, String.class);
     return response.block(Duration.ofSeconds(timeOutInSeconds));
