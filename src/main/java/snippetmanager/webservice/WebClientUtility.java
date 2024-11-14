@@ -85,7 +85,9 @@ public class WebClientUtility {
   }
 
   public <T, R> Mono<ResponseEntity<R>> postAsync(String url, T body, Class<R> responseType) {
-    return webClient.post().uri(url).bodyValue(body).retrieve().toEntity(responseType);
+    Mono<ResponseEntity<R>> response =
+        webClient.post().uri(url).bodyValue(body).retrieve().toEntity(responseType);
+    return response;
   }
 
   public <T, R> Mono<ResponseEntity<R>> putAsync(String url, T body, Class<R> responseType) {

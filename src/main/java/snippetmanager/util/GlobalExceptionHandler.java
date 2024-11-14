@@ -3,10 +3,12 @@ package snippetmanager.util;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.dao.PermissionDeniedDataAccessException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
@@ -25,12 +27,12 @@ public class GlobalExceptionHandler {
     return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);
   }
 
-  // Handle HttpServerErrorException globally
-  @ExceptionHandler(org.springframework.web.client.HttpServerErrorException.class)
-  @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-  public ResponseEntity<String> handleHttpServerErrorException(
-      org.springframework.web.client.HttpServerErrorException ex) {
-    return new ResponseEntity<>(ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+  // Handle WebClientResponseException globally (for WebClient errors)
+  @ExceptionHandler(WebClientResponseException.class)
+  public ResponseEntity<String> handleWebClientResponseException(WebClientResponseException ex) {
+    HttpStatusCode status = ex.getStatusCode();
+    String errorMessage = "Error from external service: " + ex.getMessage();
+    return new ResponseEntity<>(errorMessage, status);
   }
 
   // Handle PermissionDeniedDataAccessException globally

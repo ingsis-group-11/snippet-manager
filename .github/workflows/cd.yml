@@ -63,3 +63,16 @@ jobs:
           secrets: |
             gpr_user=${{github.actor}}
             gpr_token=${{secrets.DOCKER_TOKEN}}
+
+  deploy_to_vm:
+    name: Deploy Service
+    needs: build-and-push
+    uses: ingsis-group-11/infra/.github/workflows/update-vm.yml@main
+    with:
+      environment: ${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
+    secrets:
+        VM_PROD_IP: ${{ secrets.VM_PROD_IP }}
+        VM_DEV_IP: ${{ secrets.VM_DEV_IP }}
+        VM_USER: ${{ secrets.VM_USER }}
+        SSH_PRIVATE_KEY_PROD: ${{ secrets.SSH_PRIVATE_KEY_PROD }}
+        SSH_PRIVATE_KEY_DEV: ${{ secrets.SSH_PRIVATE_KEY_DEV }}
