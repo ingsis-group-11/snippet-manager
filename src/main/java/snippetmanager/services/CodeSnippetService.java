@@ -397,7 +397,7 @@ public class CodeSnippetService {
 
   @Transactional
   public TestCaseDto postTestCase(String assetId, TestCaseDto testCaseDto) {
-
+    System.out.println("entered service");
     boolean canAccess = canWriteSnippet(assetId);
     if (!canAccess) {
       throw new PermissionDeniedDataAccessException(
@@ -406,12 +406,14 @@ public class CodeSnippetService {
     }
     TestCase testCase;
     if (Objects.equals(testCaseDto.getTestId(), "default-id")) {
+      System.out.println("entered unrecognized testcase");
       testCase = new TestCase();
       testCase.setAssetId(assetId);
       testCase.setName(testCaseDto.getName());
       testCase.setInputs(testCaseDto.getInput());
       testCase.setOutputs(testCaseDto.getOutput());
     } else {
+      System.out.println("entered recognized testcase");
       Optional<TestCase> optionalTestCase = testCaseRepository.findById(testCaseDto.getTestId());
       if (optionalTestCase.isEmpty()) {
         throw new EntityNotFoundException("Test case not found with id " + testCaseDto.getTestId());
@@ -428,6 +430,7 @@ public class CodeSnippetService {
       TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
       throw new RuntimeException("Error saving the test case", e);
     }
+    System.out.println("exited service");
     return testCaseDto;
   }
 

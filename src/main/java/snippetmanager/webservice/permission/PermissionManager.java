@@ -31,6 +31,7 @@ public class PermissionManager {
   }
 
   public boolean canWrite(String snippetId) {
+    System.out.println("Checking if user can write");
     PermissionDto body =
         PermissionDto.builder().assetId(snippetId).permission(PermissionType.READ_WRITE).build();
 

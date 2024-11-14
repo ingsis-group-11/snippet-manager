@@ -109,6 +109,7 @@ public class CodeSnippetController {
   @PostMapping("testCases/{assetId}")
   public ResponseEntity<TestCaseDto> postTestCases(
       @PathVariable String assetId, @RequestBody TestCaseDto testCases) {
+    System.out.println("entered controller");
     return ResponseEntity.ok(codeSnippetService.postTestCase(assetId, testCases));
   }
 
