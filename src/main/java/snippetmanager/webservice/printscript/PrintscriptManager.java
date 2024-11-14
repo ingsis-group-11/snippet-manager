@@ -15,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
 import snippetmanager.util.enums.CodeLanguage;
 import snippetmanager.webservice.WebClientUtility;
@@ -37,8 +38,28 @@ public class PrintscriptManager {
     body.add("version", version);
 
     String url = printscriptServiceUrl + "/api/compile";
-    Mono<ResponseEntity<String>> response = webClientUtility.postAsync(url, body, String.class);
-    return response.block(Duration.ofSeconds(timeOutInSeconds));
+    try {
+      Mono<ResponseEntity<String>> response = webClientUtility.postAsync(url, body, String.class);
+      return response.block(Duration.ofSeconds(timeOutInSeconds));
+    } catch (WebClientResponseException.InternalServerError ex) {
+
+      String errorMessage = ex.getResponseBodyAsString();
+      throw new RuntimeException(
+          "Compilation failed: " + (errorMessage.isEmpty() ? ex.getStatusText() : errorMessage),
+          ex);
+    } catch (WebClientResponseException ex) {
+
+      String errorMessage = ex.getResponseBodyAsString();
+      throw new RuntimeException(
+          "HTTP error: "
+              + ex.getStatusCode()
+              + " - "
+              + (errorMessage.isEmpty() ? ex.getMessage() : errorMessage),
+          ex);
+    } catch (Exception ex) {
+
+      throw new RuntimeException("Unexpected error during compilation", ex);
+    }
   }
 
   public ResponseEntity<String> test(
