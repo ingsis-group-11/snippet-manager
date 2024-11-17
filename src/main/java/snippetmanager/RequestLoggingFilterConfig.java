@@ -5,7 +5,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.filter.CommonsRequestLoggingFilter;
 
 @Configuration
-public class RequestLoginFilterConfig {
+public class RequestLoggingFilterConfig {
 
   @Bean
   public CommonsRequestLoggingFilter logFilter() {
