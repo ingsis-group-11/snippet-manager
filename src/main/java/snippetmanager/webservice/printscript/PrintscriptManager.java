@@ -44,9 +44,7 @@ public class PrintscriptManager {
     } catch (WebClientResponseException.InternalServerError ex) {
 
       String errorMessage = ex.getResponseBodyAsString();
-      throw new RuntimeException(
-           (errorMessage.isEmpty() ? ex.getStatusText() : errorMessage),
-          ex);
+      throw new RuntimeException((errorMessage.isEmpty() ? ex.getStatusText() : errorMessage), ex);
     } catch (WebClientResponseException ex) {
 
       String errorMessage = ex.getResponseBodyAsString();
