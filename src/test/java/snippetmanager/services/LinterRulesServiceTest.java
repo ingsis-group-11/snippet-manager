@@ -1,7 +1,11 @@
 package snippetmanager.services;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -74,7 +78,7 @@ public class LinterRulesServiceTest {
             });
     when(assetManager.createAsset(anyString(), anyString(), any(MultipartFile.class)))
         .thenReturn(ResponseEntity.ok("Success"));
-    when(codeSnippetService.getAllWriteSnippets(eq(userId)))
+    when(codeSnippetService.getAllOwnSnippets(eq(userId)))
         .thenReturn(List.of(createSnippetSendDto(), createSnippetSendDto()));
     when(lintingRuleRepository.findByNameAndUserId(anyString(), eq(userId)))
         .thenReturn(Optional.empty());
@@ -101,7 +105,7 @@ public class LinterRulesServiceTest {
             });
     when(assetManager.createAsset(anyString(), anyString(), any(MultipartFile.class)))
         .thenReturn(ResponseEntity.ok("Success"));
-    when(codeSnippetService.getAllWriteSnippets(eq(userId)))
+    when(codeSnippetService.getAllOwnSnippets(eq(userId)))
         .thenReturn(List.of(createSnippetSendDto(), createSnippetSendDto()));
     when(lintingRuleRepository.findByNameAndUserId(anyString(), eq(userId)))
         .thenReturn(Optional.empty());
@@ -127,7 +131,7 @@ public class LinterRulesServiceTest {
             });
     when(assetManager.createAsset(anyString(), anyString(), any(MultipartFile.class)))
         .thenReturn(ResponseEntity.ok("Success"));
-    when(codeSnippetService.getAllWriteSnippets(eq(userId)))
+    when(codeSnippetService.getAllOwnSnippets(eq(userId)))
         .thenReturn(List.of(createSnippetSendDto(), createSnippetSendDto()));
     when(lintingRuleRepository.findByNameAndUserId(anyString(), eq(userId)))
         .thenReturn(Optional.of(new LintingRule()));
