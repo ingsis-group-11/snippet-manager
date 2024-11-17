@@ -27,19 +27,28 @@ import snippetmanager.webservice.asset.AssetManager;
 
 @Service
 public class LintingRuleService {
-  @Autowired private AssetManager assetManager;
+  private AssetManager assetManager;
 
-  @Autowired private LintingRuleRepository lintingRuleRepository;
+  private LintingRuleRepository lintingRuleRepository;
 
-  @Autowired private CodeSnippetService codeSnippetService;
+  private CodeSnippetService codeSnippetService;
 
-  @Autowired private CodeSnippetRepository codeSnippetRepository;
+  private CodeSnippetRepository codeSnippetRepository;
 
   private final LintProducer lintProducer;
 
   @Autowired
-  public LintingRuleService(LintProducer lintProducer) {
+  public LintingRuleService(
+      LintProducer lintProducer,
+      AssetManager assetManager,
+      LintingRuleRepository lintingRuleRepository,
+      CodeSnippetService codeSnippetService,
+      CodeSnippetRepository codeSnippetRepository) {
     this.lintProducer = lintProducer;
+    this.assetManager = assetManager;
+    this.lintingRuleRepository = lintingRuleRepository;
+    this.codeSnippetService = codeSnippetService;
+    this.codeSnippetRepository = codeSnippetRepository;
   }
 
   public String createOrUpdateRules(List<RuleDto> rules, String userId) {
