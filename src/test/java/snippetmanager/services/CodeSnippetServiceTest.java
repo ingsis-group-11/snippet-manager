@@ -35,6 +35,7 @@ import org.springframework.test.context.junit4.AbstractTransactionalJUnit4Spring
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Mono;
+import snippetmanager.model.dtos.AllSnippetsRecieveDto;
 import snippetmanager.model.dtos.SnippetReceivedDto;
 import snippetmanager.model.dtos.SnippetSendDto;
 import snippetmanager.model.dtos.webservice.PermissionDto;
@@ -65,6 +66,8 @@ class CodeSnippetServiceTest extends AbstractTransactionalJUnit4SpringContextTes
   @MockBean private AssetManager assetManager;
 
   @MockBean private PrintscriptManager printscriptManager;
+
+  @MockBean private UserService userService;
 
   @MockBean private LintProducer lintProducer;
 
@@ -324,6 +327,30 @@ class CodeSnippetServiceTest extends AbstractTransactionalJUnit4SpringContextTes
           codeSnippetService.deleteSnippet(snippetId);
         });
   }
+
+  //   public AllSnippetsSendDto getAllSnippets(Integer from, Integer to, String userId) {
+  //    userService.createUser(userId);
+  //    return getAllSnippetsWithPermission(from, to, userId, PermissionType.READ);
+  //  }
+  //
+  //  public List<SnippetSendDto> getAllOwnSnippets(String userId) {
+  //    AllSnippetsSendDto allSnippetsSendDto =
+  //        getAllSnippetsWithPermission(null, null, userId, PermissionType.READ_WRITE);
+  //
+  //    return allSnippetsSendDto.getSnippets();
+  //  }
+
+  @Test
+  public void getAllSnippetsSuccess(){
+    // userService.createUser(userId);
+    // permissionManager.getSnippetsUserWithPermission(from, to, permissionType.toString())
+    String userId = UUID.randomUUID().toString();
+
+    when(permissionManager.getSnippetsUserWithPermission(0, 10, PermissionType.READ.toString())).thenReturn(ResponseEntity.ok(new AllSnippetsRecieveDto()));
+
+    codeSnippetService.getAllSnippets(0, 10, userId);
+  }
+
 
   private MultipartFile mockMultipartFile(String content) {
     return new MockMultipartFile("test-snippet", content.getBytes(StandardCharsets.UTF_8));
