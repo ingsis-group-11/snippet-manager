@@ -36,6 +36,7 @@ import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Mono;
 import snippetmanager.model.dtos.AllSnippetsRecieveDto;
+import snippetmanager.model.dtos.SnippetIdAuthorDto;
 import snippetmanager.model.dtos.SnippetReceivedDto;
 import snippetmanager.model.dtos.SnippetSendDto;
 import snippetmanager.model.dtos.webservice.PermissionDto;
@@ -48,6 +49,7 @@ import snippetmanager.repositories.FormatterRuleRepository;
 import snippetmanager.repositories.LanguagesRepository;
 import snippetmanager.repositories.LintingRuleRepository;
 import snippetmanager.util.enums.CodeLanguage;
+import snippetmanager.util.enums.LintResult;
 import snippetmanager.util.enums.PermissionType;
 import snippetmanager.webservice.WebClientUtility;
 import snippetmanager.webservice.asset.AssetManager;
@@ -341,16 +343,36 @@ class CodeSnippetServiceTest extends AbstractTransactionalJUnit4SpringContextTes
   //  }
 
   @Test
-  public void getAllSnippetsSuccess(){
-    // userService.createUser(userId);
-    // permissionManager.getSnippetsUserWithPermission(from, to, permissionType.toString())
+  public void getAllSnippetsSuccess() {
     String userId = UUID.randomUUID().toString();
+    String assetId = UUID.randomUUID().toString();
 
-    when(permissionManager.getSnippetsUserWithPermission(0, 10, PermissionType.READ.toString())).thenReturn(ResponseEntity.ok(new AllSnippetsRecieveDto()));
+    AllSnippetsRecieveDto allSnippetsRecieveDto =
+        AllSnippetsRecieveDto.builder()
+            .snippetsIds(
+                List.of(SnippetIdAuthorDto.builder().author(userId).snippetId(assetId).build()))
+            .build();
+
+    when(permissionManager.getSnippetsUserWithPermission(0, 10, PermissionType.READ.toString()))
+        .thenReturn(ResponseEntity.ok(allSnippetsRecieveDto));
+    when(assetManager.getAsset(eq("snippets"), eq(assetId)))
+        .thenReturn(new ByteArrayInputStream("test content".getBytes()));
+    when(userService.getUserName(eq(userId))).thenReturn("userName");
+
+    CodeSnippet codeSnippet = new CodeSnippet();
+    codeSnippet.setAssetId(assetId);
+    codeSnippet.setLanguage(CodeLanguage.PRINTSCRIPT);
+    codeSnippet.setVersion("1.1");
+    codeSnippet.setExtension("prs");
+    codeSnippet.setName("test-snippet");
+    codeSnippet.setLintResult(LintResult.SUCCESS);
+    when(codeSnippetRepository.findCodeSnippetByAssetId(eq(assetId)))
+        .thenReturn(Optional.of(codeSnippet));
 
     codeSnippetService.getAllSnippets(0, 10, userId);
-  }
 
+    verify(permissionManager).getSnippetsUserWithPermission(0, 10, PermissionType.READ.toString());
+  }
 
   private MultipartFile mockMultipartFile(String content) {
     return new MockMultipartFile("test-snippet", content.getBytes(StandardCharsets.UTF_8));
