@@ -120,7 +120,7 @@ public class LintingRuleService {
     List<LintingRule> lintingRules = lintingRuleRepository.findAllByUserId(userId);
 
     if (lintingRules.isEmpty()) {
-      this.createOrUpdateRules(DefaultRulesFactory.getDefaultFormatterRules(), userId);
+      this.createOrUpdateRules(DefaultRulesFactory.getDefaultLinterRules(), userId);
     }
   }
 
