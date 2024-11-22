@@ -13,4 +13,9 @@ public class ErrorController {
   public ResponseEntity<String> error() {
     return ResponseEntity.status(500).body("ERROR");
   }
+
+  @GetMapping
+  public ResponseEntity<String> topoEndpoint() {
+    return ResponseEntity.status(200).body("Topo");
+  }
 }
